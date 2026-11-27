@@ -1125,4 +1125,5 @@ st.markdown("""
     <div class="footer-tagline">💡 Smarter Insights. Better Education. A Brighter Sindh.</div>
     <div class="footer-skyline">🏛️ Karachi • Hyderabad • Sukkur • Larkana • Mirpurkhas • Shaheed Benazirabad</div>
 </div>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True
+)
