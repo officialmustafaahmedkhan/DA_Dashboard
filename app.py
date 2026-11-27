@@ -140,6 +140,25 @@ st.markdown("""
         background-color: #FFFFFF !important;
     }
 
+    /* MAIN AREA RADIO BUTTONS (Count / Percentage) */
+    div[data-testid="stAppViewContainer"] div[role="radiogroup"] label p,
+    div[data-testid="stAppViewContainer"] div[role="radiogroup"] label span,
+    div[data-testid="stAppViewContainer"] div[role="radiogroup"] label div {
+        color: #0F172A !important;
+        font-weight: 700 !important;
+        opacity: 1 !important;
+    }
+    div[data-testid="stAppViewContainer"] div[role="radiogroup"] label {
+        background-color: #F1F5F9 !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        padding: 4px 10px !important;
+    }
+    div[data-testid="stAppViewContainer"] div[role="radiogroup"] label:has(input:checked) {
+        background-color: #DBEAFE !important;
+        border-color: #1366D6 !important;
+    }
+
     /* DATASET HEALTH CARD */
     .sidebar-health {
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(6, 78, 59, 0.35) 100%);
@@ -254,7 +273,14 @@ def style_chart(fig, height=290):
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
         font=dict(color="#0F172A", size=11, family="Inter, sans-serif"),
-        legend=dict(font=dict(color="#0F172A", size=11), orientation="h", y=1.14, x=0.5, xanchor="center"),
+        legend=dict(
+            font=dict(color="#0F172A", size=11),
+            title=dict(font=dict(color="#0F172A", size=11)),
+            orientation="h",
+            y=1.14,
+            x=0.5,
+            xanchor="center"
+        ),
         margin=dict(t=24, l=8, r=8, b=8),
         height=height
     )
@@ -609,7 +635,7 @@ if active == "Executive Overview":
 
     with row1_right:
         with st.container(border=True):
-            ur_hdr, ur_tog = st.columns([1.5, 1])
+            ur_hdr, ur_tog = st.columns([1.4, 1])
             ur_hdr.markdown('<div class="bento-title">🏛️ Urban vs. Rural Infrastructure</div>', unsafe_allow_html=True)
             ur_mode = ur_tog.radio("Mode", ["Count", "Percentage"], horizontal=True, label_visibility="collapsed")
 
@@ -633,7 +659,12 @@ if active == "Executive Overview":
                     color_discrete_map={"Urban": "#1366D6", "Rural": "#4ADE80"}
                 )
                 fig_ur.update_traces(texttemplate=txt_fmt, textposition="outside", textfont=dict(size=10, color="#0F172A"))
-                fig_ur.update_layout(yaxis_title="", xaxis_title="")
+                fig_ur.update_layout(
+                    yaxis_title="",
+                    xaxis_title="",
+                    legend_title_text="",
+                    yaxis_range=[0, 108] if ur_mode == "Percentage" else None
+                )
                 st.plotly_chart(style_chart(fig_ur, 255), use_container_width=True, config=PLOTLY_CONFIG)
 
     r2_c1, r2_c2, r2_c3 = st.columns([1.0, 1.05, 1.15])
@@ -653,7 +684,7 @@ if active == "Executive Overview":
                     color_discrete_map={"MALE": "#1366D6", "FEMALE": "#F472B6"}
                 )
                 fig_mf.update_traces(texttemplate="%{y:.2s}", textposition="outside", textfont=dict(size=9, color="#0F172A"))
-                fig_mf.update_layout(yaxis_title="", xaxis_title="")
+                fig_mf.update_layout(yaxis_title="", xaxis_title="", legend_title_text="")
                 st.plotly_chart(style_chart(fig_mf, 245), use_container_width=True, config=PLOTLY_CONFIG)
 
     with r2_c2:
