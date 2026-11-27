@@ -472,7 +472,7 @@ with hdr_right:
             data=csv_bytes,
             file_name="sindh_education_filtered_report.csv",
             mime="text/csv",
-            width="stretch"
+            use_container_width=True
         )
     with r_c3:
         st.markdown('<div class="avatar-pill">MAK</div>', unsafe_allow_html=True)
@@ -549,7 +549,7 @@ st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 pill_cols = st.columns(len(SECTIONS))
 for idx, (icon, sec_name) in enumerate(SECTIONS):
     btn_type = "primary" if st.session_state.active_section == sec_name else "secondary"
-    if pill_cols[idx].button(f"{icon} {sec_name}", key=f"top_pill_{sec_name}", type=btn_type, width="stretch"):
+    if pill_cols[idx].button(f"{icon} {sec_name}", key=f"top_pill_{sec_name}", type=btn_type, use_container_width=True):
         st.session_state.active_section = sec_name
         st.rerun()
 
@@ -579,11 +579,15 @@ if active == "Executive Overview":
                 if not sun_df.empty:
                     fig_sun = px.sunburst(
                         sun_df, path=["Composition", "School Type"], values="Number",
-                        color="Composition", color_discrete_map={"MALE": "#1366D6", "FEMALE": "#00A896"}
+                        color="Composition",
+                        color_discrete_map={"MALE": "#1366D6", "FEMALE": "#4ADE80"}
                     )
-                    fig_sun.update_traces(textinfo="label+percent parent", insidetextfont=dict(color="#FFFFFF", size=11))
+                    fig_sun.update_traces(
+                        textinfo="label+percent parent",
+                        insidetextfont=dict(color="#FFFFFF", size=11)
+                    )
                     fig_sun.update_layout(paper_bgcolor="#FFFFFF", margin=dict(t=6, l=6, r=6, b=6), height=255)
-                    st.plotly_chart(fig_sun, width="stretch", config=PLOTLY_CONFIG)
+                    st.plotly_chart(fig_sun, use_container_width=True, config=PLOTLY_CONFIG)
 
             with leg_col:
                 lvl_shares = (
@@ -598,8 +602,8 @@ if active == "Executive Overview":
                 st.markdown(f"""
                 <div class="legend-list">
                     <div class="legend-item"><span><span class="legend-dot" style="background:#1366D6;"></span>Primary</span><span class="legend-pct">{p_pct}%</span></div>
-                    <div class="legend-item"><span><span class="legend-dot" style="background:#00A896;"></span>Middle</span><span class="legend-pct">{m_pct}%</span></div>
-                    <div class="legend-item"><span><span class="legend-dot" style="background:#7C5dfa;"></span>Secondary+</span><span class="legend-pct">{s_pct}%</span></div>
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#4ADE80;"></span>Middle</span><span class="legend-pct">{m_pct}%</span></div>
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#22C55E;"></span>Secondary+</span><span class="legend-pct">{s_pct}%</span></div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -626,13 +630,13 @@ if active == "Executive Overview":
 
                 fig_ur = px.bar(
                     ur_df, x="School Type", y="DisplayVal", color="Location", barmode="group",
-                    color_discrete_map={"Urban": "#1366D6", "Rural": "#00A896"}
+                    color_discrete_map={"Urban": "#1366D6", "Rural": "#4ADE80"}
                 )
                 fig_ur.update_traces(texttemplate=txt_fmt, textposition="outside", textfont=dict(size=10, color="#0F172A"))
                 fig_ur.update_layout(yaxis_title="", xaxis_title="")
-                st.plotly_chart(style_chart(fig_ur, 255), width="stretch", config=PLOTLY_CONFIG)
+                st.plotly_chart(style_chart(fig_ur, 255), use_container_width=True, config=PLOTLY_CONFIG)
 
-    r2_c1, r2_c2, r2_c3 = st.columns([1.05, 0.9, 1.15])
+    r2_c1, r2_c2, r2_c3 = st.columns([1.0, 1.05, 1.15])
 
     with r2_c1:
         with st.container(border=True):
@@ -650,41 +654,55 @@ if active == "Executive Overview":
                 )
                 fig_mf.update_traces(texttemplate="%{y:.2s}", textposition="outside", textfont=dict(size=9, color="#0F172A"))
                 fig_mf.update_layout(yaxis_title="", xaxis_title="")
-                st.plotly_chart(style_chart(fig_mf, 235), width="stretch", config=PLOTLY_CONFIG)
+                st.plotly_chart(style_chart(fig_mf, 245), use_container_width=True, config=PLOTLY_CONFIG)
 
     with r2_c2:
         with st.container(border=True):
             st.markdown('<div class="bento-title">🍩 Category Distribution</div>', unsafe_allow_html=True)
-            d_c1, d_c2 = st.columns([1.25, 1])
             cat_counts = filtered_df["Category"].value_counts().reset_index()
             cat_counts.columns = ["Category", "Records"]
 
-            with d_c1:
-                fig_donut = px.pie(
-                    cat_counts, names="Category", values="Records", hole=0.62,
-                    color="Category",
-                    color_discrete_map={"INSTITUTIONS": "#1366D6", "ENROLMENT": "#00A896", "TEACHING STAFF": "#7C5dfa"}
-                )
-                fig_donut.update_traces(textinfo="none")
-                fig_donut.update_layout(
-                    showlegend=False, paper_bgcolor="#FFFFFF", margin=dict(t=8, l=4, r=4, b=8), height=225,
-                    annotations=[dict(text=f"<b>{len(filtered_df):,}</b><br>Total", x=0.5, y=0.5, font_size=12, showarrow=False, font_color="#0B2259")]
-                )
-                st.plotly_chart(fig_donut, width="stretch", config=PLOTLY_CONFIG)
-
-            with d_c2:
-                tot_recs = len(filtered_df) if len(filtered_df) > 0 else 1
-                c_map = dict(zip(cat_counts["Category"], cat_counts["Records"]))
-                i_p = round(c_map.get("INSTITUTIONS", 0) / tot_recs * 100, 1)
-                e_p = round(c_map.get("ENROLMENT", 0) / tot_recs * 100, 1)
-                t_p = round(c_map.get("TEACHING STAFF", 0) / tot_recs * 100, 1)
-                st.markdown(f"""
-                <div class="legend-list" style="padding-top: 22px; gap: 10px; font-size: 0.80rem;">
-                    <div class="legend-item"><span><span class="legend-dot" style="background:#1366D6;"></span>Institutions</span><span class="legend-pct">{i_p}%</span></div>
-                    <div class="legend-item"><span><span class="legend-dot" style="background:#00A896;"></span>Enrolment</span><span class="legend-pct">{e_p}%</span></div>
-                    <div class="legend-item"><span><span class="legend-dot" style="background:#7C5dfa;"></span>Staff</span><span class="legend-pct">{t_p}%</span></div>
-                </div>
-                """, unsafe_allow_html=True)
+            fig_donut = px.pie(
+                cat_counts,
+                names="Category",
+                values="Records",
+                hole=0.55,
+                color="Category",
+                color_discrete_map={
+                    "INSTITUTIONS": "#1366D6",
+                    "ENROLMENT": "#4ADE80",
+                    "TEACHING STAFF": "#7C5dfa"
+                }
+            )
+            fig_donut.update_traces(
+                textposition="inside",
+                textinfo="percent",
+                insidetextfont=dict(color="#FFFFFF", size=11, family="Inter, sans-serif"),
+                marker=dict(line=dict(color="#FFFFFF", width=2))
+            )
+            fig_donut.update_layout(
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.22,
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(size=10, color="#0F172A")
+                ),
+                paper_bgcolor="#FFFFFF",
+                margin=dict(t=10, l=10, r=10, b=45),
+                height=245,
+                annotations=[
+                    dict(
+                        text=f"<b>{len(filtered_df):,}</b><br><span style='font-size:10px;color:#475569;'>Records</span>",
+                        x=0.5, y=0.5,
+                        font=dict(size=13, color="#0B2259"),
+                        showarrow=False
+                    )
+                ]
+            )
+            st.plotly_chart(fig_donut, use_container_width=True, config=PLOTLY_CONFIG)
 
     with r2_c3:
         with st.container(border=True):
@@ -697,11 +715,24 @@ if active == "Executive Overview":
                 df[(df["Category"] == "INSTITUTIONS") & (df["Location"] == "Total") & (df["Composition"] == "TOTAL")]
                 .groupby("District")["Number"].sum().sort_values(ascending=False).head(n_limit).reset_index()
             )
-            fig_line = px.area(dist_perf, x="District", y="Number", markers=True, color_discrete_sequence=["#1366D6"])
-            fig_line.update_traces(line=dict(width=2.5), fillcolor="rgba(19, 102, 214, 0.12)")
-            fig_line.update_layout(yaxis_title="", xaxis_title="")
-            fig_line.update_xaxes(tickangle=-35, tickfont=dict(size=9))
-            st.plotly_chart(style_chart(fig_line, 235), width="stretch", config=PLOTLY_CONFIG)
+            fig_dist = px.bar(
+                dist_perf,
+                x="District",
+                y="Number",
+                color_discrete_sequence=["#1366D6"]
+            )
+            fig_dist.update_traces(
+                texttemplate="%{y:,.0f}",
+                textposition="outside",
+                textfont=dict(size=8, color="#0F172A")
+            )
+            fig_dist.update_layout(
+                yaxis_title="Institutions (Numeric)",
+                xaxis_title="District (Categorical)",
+                bargap=0.25
+            )
+            fig_dist.update_xaxes(type="category", tickangle=-40, tickfont=dict(size=9))
+            st.plotly_chart(style_chart(fig_dist, 245), use_container_width=True, config=PLOTLY_CONFIG)
 
 # ==================== VIEW 2: DISTRICT & GENDER ====================
 elif active == "District & Gender":
@@ -714,7 +745,7 @@ elif active == "District & Gender":
                 .groupby("District")["Number"].sum().sort_values(ascending=True).tail(15).reset_index()
             )
             fig_dr = px.bar(d_rank, x="Number", y="District", orientation="h", color_discrete_sequence=["#1366D6"])
-            st.plotly_chart(style_chart(fig_dr, 390), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_dr, 390), use_container_width=True, config=PLOTLY_CONFIG)
 
     with g2:
         with st.container(border=True):
@@ -725,7 +756,7 @@ elif active == "District & Gender":
                 color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa"]
             )
             fig_bx.update_layout(showlegend=False)
-            st.plotly_chart(style_chart(fig_bx, 390), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_bx, 390), use_container_width=True, config=PLOTLY_CONFIG)
 
 # ==================== VIEW 3: PCA & CORRELATIONS ====================
 elif active == "PCA & Correlations":
@@ -740,7 +771,7 @@ elif active == "PCA & Correlations":
             fig_pca.add_trace(go.Bar(x=pcs, y=exp_var, name="Individual (%)", marker_color="#00A896"))
             fig_pca.add_trace(go.Scatter(x=pcs, y=cum_var, name="Cumulative (%)", mode="lines+markers", line=dict(color="#1366D6", width=3)))
             fig_pca.add_hline(y=95, line_dash="dash", line_color="#E11D48")
-            st.plotly_chart(style_chart(fig_pca, 380), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_pca, 380), use_container_width=True, config=PLOTLY_CONFIG)
 
     with p2:
         with st.container(border=True):
@@ -748,13 +779,13 @@ elif active == "PCA & Correlations":
             num_corr = df[["Number", "Population", "No/100000", "Log_Number"]].corr().round(3)
             fig_corr = px.imshow(num_corr, text_auto=True, color_continuous_scale="Blues", zmin=-1, zmax=1)
             fig_corr.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11))
-            st.plotly_chart(style_chart(fig_corr, 380), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_corr, 380), use_container_width=True, config=PLOTLY_CONFIG)
 
 # ==================== VIEW 4: SUPERVISED ML ====================
 elif active == "Supervised ML":
     with st.container(border=True):
         st.markdown('<div class="bento-title">⚙️ Supervised ML Classification Leaderboard (5 PCA Components)</div>', unsafe_allow_html=True)
-        st.dataframe(ai["sup_lb"], width="stretch", hide_index=True)
+        st.dataframe(ai["sup_lb"], use_container_width=True, hide_index=True)
 
     sel_sup = st.selectbox("Select Supervised Classifier:", ai["sup_lb"]["Model"].tolist())
     clf_sup = ai["sup_models"][sel_sup]
@@ -774,7 +805,7 @@ elif active == "Supervised ML":
                     line=dict(color=["#1366D6", "#00A896", "#7C5dfa"][i], width=3)
                 ))
             fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="#94A3B8", dash="dash")))
-            st.plotly_chart(style_chart(fig_roc, 330), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_roc, 330), use_container_width=True, config=PLOTLY_CONFIG)
 
     with s2:
         with st.container(border=True):
@@ -782,7 +813,7 @@ elif active == "Supervised ML":
             cm = confusion_matrix(ai["y_test"], clf_sup.predict(ai["X_test_p"]))
             fig_cm = px.imshow(cm, text_auto=True, x=class_names, y=class_names, color_continuous_scale="Blues")
             fig_cm.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11))
-            st.plotly_chart(style_chart(fig_cm, 330), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_cm, 330), use_container_width=True, config=PLOTLY_CONFIG)
 
     s3, s4 = st.columns(2)
     with s3:
@@ -791,13 +822,13 @@ elif active == "Supervised ML":
             reg_df = pd.DataFrame({"Actual": ai["reg"]["y_test"], "Predicted": ai["reg"]["y_pred"]})
             fig_reg = px.scatter(reg_df, x="Actual", y="Predicted", opacity=0.6, color_discrete_sequence=["#1366D6"])
             fig_reg.add_trace(go.Scatter(x=[0, reg_df["Actual"].max()], y=[0, reg_df["Actual"].max()], mode="lines", name="Ideal Fit", line=dict(color="#E11D48", dash="dash")))
-            st.plotly_chart(style_chart(fig_reg, 310), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_reg, 310), use_container_width=True, config=PLOTLY_CONFIG)
 
     with s4:
         with st.container(border=True):
             st.markdown('<div class="bento-title">🌟 Feature Importance Ranking</div>', unsafe_allow_html=True)
             fig_imp = px.bar(ai["feat_imp"], x="Importance", y="Feature", orientation="h", color_discrete_sequence=["#00A896"])
-            st.plotly_chart(style_chart(fig_imp, 310), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_imp, 310), use_container_width=True, config=PLOTLY_CONFIG)
 
 # ==================== VIEW 5: UNSUPERVISED ML ====================
 elif active == "Unsupervised ML":
@@ -826,7 +857,7 @@ elif active == "Unsupervised ML":
                 color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#16A34A", "#F59E0B", "#E11D48"]
             )
             fig_cl.update_traces(textposition="top center", textfont=dict(color="#0F172A", size=9))
-            st.plotly_chart(style_chart(fig_cl, 350), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_cl, 350), use_container_width=True, config=PLOTLY_CONFIG)
 
     with u2:
         with st.container(border=True):
@@ -834,7 +865,7 @@ elif active == "Unsupervised ML":
             inertias = [KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_d_scaled).inertia_ for k in range(2, 8)]
             fig_el = px.line(x=list(range(2, 8)), y=inertias, markers=True, labels={"x": "Clusters (K)", "y": "Inertia"})
             fig_el.update_traces(line_color="#1366D6", line_width=3)
-            st.plotly_chart(style_chart(fig_el, 200), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_el, 200), use_container_width=True, config=PLOTLY_CONFIG)
 
         with st.container(border=True):
             st.markdown('<div class="bento-title">🚨 Isolation Forest Anomaly Detection</div>', unsafe_allow_html=True)
@@ -845,7 +876,7 @@ elif active == "Unsupervised ML":
                 df_anom, x="Population", y="Number", color="Status",
                 color_discrete_map={"Normal": "#94A3B8", "Anomaly": "#E11D48"}
             )
-            st.plotly_chart(style_chart(fig_iso, 210), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_iso, 210), use_container_width=True, config=PLOTLY_CONFIG)
 
 # ==================== VIEW 6: DEEP LEARNING ====================
 elif active == "Deep Learning":
@@ -858,7 +889,7 @@ elif active == "Deep Learning":
             fig_dl.add_trace(go.Scatter(x=ep, y=ai["dl"]["losses"], name="Loss", line=dict(color="#E11D48", width=2.5)))
             fig_dl.add_trace(go.Scatter(x=ep, y=ai["dl"]["val_accs"], name="Val Acc (%)", yaxis="y2", line=dict(color="#1366D6", width=2.5)))
             fig_dl.update_layout(yaxis=dict(title="Loss"), yaxis2=dict(title="Acc (%)", overlaying="y", side="right"))
-            st.plotly_chart(style_chart(fig_dl, 310), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_dl, 310), use_container_width=True, config=PLOTLY_CONFIG)
 
     with d2:
         with st.container(border=True):
@@ -874,7 +905,7 @@ elif active == "Deep Learning":
                     line=dict(color=["#1366D6", "#00A896", "#7C5dfa"][i], width=3)
                 ))
             fig_dl_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="#94A3B8", dash="dash")))
-            st.plotly_chart(style_chart(fig_dl_roc, 310), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_dl_roc, 310), use_container_width=True, config=PLOTLY_CONFIG)
 
     d3, d4 = st.columns(2)
     dl_preds = ai["dl"]["model"].predict(ai["X_test_p"])
@@ -889,7 +920,7 @@ elif active == "Deep Learning":
                 color_continuous_scale="Teal", labels=dict(x="Predicted", y="Actual", color="Count")
             )
             fig_dl_cm.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11), colorbar_title_font=dict(color="#0F172A"))
-            st.plotly_chart(style_chart(fig_dl_cm, 310), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_dl_cm, 310), use_container_width=True, config=PLOTLY_CONFIG)
 
     with d4:
         with st.container(border=True):
@@ -906,7 +937,7 @@ elif active == "Deep Learning":
             )
             fig_prf.update_traces(texttemplate="%{y:.1f}%", textposition="outside", textfont=dict(size=9, color="#0F172A"))
             fig_prf.update_yaxes(range=[0, 112])
-            st.plotly_chart(style_chart(fig_prf, 310), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_prf, 310), use_container_width=True, config=PLOTLY_CONFIG)
 
 # ==================== VIEW 7: LIVE PREDICTOR ====================
 elif active == "Live Predictor":
@@ -944,7 +975,7 @@ elif active == "Live Predictor":
             fig_p = px.bar(p_df, x="Category", y="Confidence (%)", color="Category", text="Confidence (%)",
                            color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa"])
             fig_p.update_layout(showlegend=False)
-            st.plotly_chart(style_chart(fig_p, 270), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_p, 270), use_container_width=True, config=PLOTLY_CONFIG)
 
 # ------------------------------------------------------------
 # 8. BOTTOM GRADIENT FOOTER BANNER
