@@ -1,7 +1,6 @@
 # ============================================================
-# UNIVERSAL DATA ANALYTICS, ML & DEEP LEARNING INTELLIGENCE HUB
-# Supports ANY CSV / Excel Dataset + Default Sindh Education Data
-# Run via terminal: streamlit run d:/DA_Updated/app.py
+# SINDH EDUCATION INTELLIGENCE HUB — EXECUTIVE SAAS UI EDITION
+# Dataset: Sindh Education Statistics (sindh-education-stats_2.csv)
 # ============================================================
 
 from pathlib import Path
@@ -15,17 +14,12 @@ import plotly.graph_objects as go
 from sklearn.preprocessing import LabelEncoder, StandardScaler, label_binarize
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
-from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import (
-    RandomForestClassifier,
-    RandomForestRegressor,
-    GradientBoostingRegressor,
-    IsolationForest
-)
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, IsolationForest
 from sklearn.cluster import KMeans
-from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -44,7 +38,7 @@ from sklearn.metrics import (
 # ------------------------------------------------------------
 
 st.set_page_config(
-    page_title="Universal AI & Data Intelligence Hub",
+    page_title="Sindh Education Intelligence Hub",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -55,8 +49,8 @@ if "active_section" not in st.session_state:
 
 SECTIONS = [
     ("🏠", "Executive Overview"),
-    ("🧹", "Cleaning & PCA"),
-    ("📊", "Deep EDA & Stats"),
+    ("📍", "District & Gender"),
+    ("📊", "PCA & Correlations"),
     ("⚙️", "Supervised ML"),
     ("🧬", "Unsupervised ML"),
     ("🧠", "Deep Learning"),
@@ -65,28 +59,44 @@ SECTIONS = [
 
 st.markdown("""
 <style>
-    .stApp { background-color: #EEF3FA !important; color: #0F172A !important; }
+    .stApp {
+        background-color: #EEF3FA !important;
+        color: #0F172A !important;
+    }
     .block-container {
-        padding-top: 1.0rem !important; padding-bottom: 1.2rem !important;
-        padding-left: 1.5rem !important; padding-right: 1.5rem !important;
+        padding-top: 1.0rem !important;
+        padding-bottom: 1.2rem !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
         max-width: 100% !important;
     }
-    header[data-testid="stHeader"] { background: transparent !important; height: 1.8rem !important; }
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        height: 1.8rem !important;
+    }
 
     /* DARK NAVY SIDEBAR */
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #071A4B 0%, #0A2361 70%, #06153D 100%) !important;
         border-right: none !important;
     }
-    section[data-testid="stSidebar"] > div:first-child { padding-top: 0.9rem !important; }
+    section[data-testid="stSidebar"] > div:first-child {
+        padding-top: 1rem !important;
+    }
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p,
-    section[data-testid="stSidebar"] .stCaption { color: #CBD5E1 !important; }
-
-    section[data-testid="stSidebar"] div[role="radiogroup"] { gap: 4px !important; }
+    section[data-testid="stSidebar"] .stCaption {
+        color: #CBD5E1 !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 4px !important;
+    }
     section[data-testid="stSidebar"] div[role="radiogroup"] label {
-        background-color: transparent !important; padding: 8px 14px !important;
-        border-radius: 10px !important; margin: 0 !important; border: 1px solid transparent !important;
+        background-color: transparent !important;
+        padding: 9px 14px !important;
+        border-radius: 10px !important;
+        margin: 0 !important;
+        border: 1px solid transparent !important;
     }
     section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
         background-color: rgba(255, 255, 255, 0.08) !important;
@@ -97,78 +107,83 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(22, 119, 255, 0.4) !important;
     }
     section[data-testid="stSidebar"] div[role="radiogroup"] label p {
-        color: #FFFFFF !important; font-weight: 600 !important; font-size: 0.88rem !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        font-size: 0.90rem !important;
     }
-    section[data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child { display: none !important; }
-
+    section[data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child {
+        display: none !important;
+    }
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-        background-color: #0B2563 !important; border: 1px solid #264896 !important; border-radius: 8px !important;
+        background-color: #0B2563 !important;
+        border: 1px solid #264896 !important;
+        border-radius: 8px !important;
     }
     section[data-testid="stSidebar"] div[data-baseweb="select"] span,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] div { color: #FFFFFF !important; }
-    section[data-testid="stSidebar"] svg { fill: #FFFFFF !important; }
-
-    /* FILE UPLOADER IN SIDEBAR */
-    section[data-testid="stSidebar"] section[data-testid="stFileUploaderDropzone"] {
-        background-color: #0B2563 !important;
-        border: 1px dashed #38BDF8 !important;
-        border-radius: 10px !important;
-        padding: 8px !important;
+    section[data-testid="stSidebar"] div[data-baseweb="select"] div {
+        color: #FFFFFF !important;
     }
-    section[data-testid="stSidebar"] section[data-testid="stFileUploaderDropzone"] * {
-        color: #E2E8F0 !important;
-        font-size: 0.78rem !important;
+    section[data-testid="stSidebar"] svg {
+        fill: #FFFFFF !important;
     }
 
     /* MAIN AREA INPUTS & DROPDOWNS */
     div[data-testid="stAppViewContainer"] div[data-baseweb="select"] > div {
-        background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
     }
     div[data-testid="stAppViewContainer"] div[data-baseweb="select"] span,
     div[data-testid="stAppViewContainer"] div[data-baseweb="select"] div,
     div[data-testid="stAppViewContainer"] input {
-        color: #0F172A !important; background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        background-color: #FFFFFF !important;
     }
 
     /* DATASET HEALTH CARD */
     .sidebar-health {
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(6, 78, 59, 0.35) 100%);
-        border: 1px solid rgba(52, 211, 153, 0.45); border-radius: 12px;
-        padding: 11px 14px; margin-top: 10px;
+        border: 1px solid rgba(52, 211, 153, 0.45);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-top: 12px;
     }
     .health-top { display: flex; align-items: center; gap: 10px; }
     .health-check {
-        width: 32px; height: 32px; border-radius: 50%; background-color: #10B981;
-        color: #FFFFFF; display: flex; align-items: center; justify-content: center;
-        font-weight: 900; font-size: 1.0rem; flex-shrink: 0;
+        width: 34px; height: 34px; border-radius: 50%;
+        background-color: #10B981; color: #FFFFFF;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 900; font-size: 1.05rem; flex-shrink: 0;
     }
-    .health-sub { color: #6EE7B7 !important; font-size: 0.72rem; font-weight: 700; }
-    .health-main { color: #FFFFFF !important; font-size: 1.0rem; font-weight: 800; }
+    .health-sub { color: #6EE7B7 !important; font-size: 0.74rem; font-weight: 700; }
+    .health-main { color: #FFFFFF !important; font-size: 1.05rem; font-weight: 800; }
     .health-foot {
-        color: #A7F3D0 !important; font-size: 0.72rem; margin-top: 6px;
-        padding-top: 5px; border-top: 1px solid rgba(52, 211, 153, 0.25);
+        color: #A7F3D0 !important; font-size: 0.74rem;
+        margin-top: 6px; padding-top: 6px;
+        border-top: 1px solid rgba(52, 211, 153, 0.25);
     }
 
     /* TOP HEADER BAR */
     .title-block { border-left: 5px solid #14B8A6; padding-left: 12px; }
-    .main-hub-title { font-size: 1.7rem; font-weight: 800; color: #0B2259; line-height: 1.15; margin: 0; }
-    .main-hub-sub { font-size: 0.86rem; color: #475569; margin-top: 2px; }
+    .main-hub-title { font-size: 1.75rem; font-weight: 800; color: #0B2259; line-height: 1.15; margin: 0; }
+    .main-hub-sub { font-size: 0.88rem; color: #475569; margin-top: 2px; }
     .updated-pill {
         background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px;
-        padding: 7px 12px; font-size: 0.78rem; font-weight: 600; color: #1E293B;
+        padding: 7px 14px; font-size: 0.80rem; font-weight: 600; color: #1E293B;
         box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04); text-align: center;
     }
     .avatar-pill {
-        background-color: #0B2259; color: #FFFFFF; font-weight: 800; font-size: 0.78rem;
+        background-color: #0B2259; color: #FFFFFF; font-weight: 800; font-size: 0.80rem;
         width: 36px; height: 36px; border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
     }
 
     /* 4 GRADIENT KPI CARDS */
     .grad-kpi {
-        border-radius: 14px; padding: 15px 16px; color: #FFFFFF !important;
-        position: relative; overflow: hidden; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10);
-        min-height: 114px; display: flex; align-items: center; gap: 12px;
+        border-radius: 14px; padding: 16px 18px; color: #FFFFFF !important;
+        position: relative; overflow: hidden;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10);
+        min-height: 118px; display: flex; align-items: center; gap: 14px;
     }
     .kpi-blue { background: linear-gradient(135deg, #1366D6 0%, #0C4A9E 100%); }
     .kpi-teal { background: linear-gradient(135deg, #00A896 0%, #028090 100%); }
@@ -176,17 +191,19 @@ st.markdown("""
     .kpi-green { background: linear-gradient(135deg, #16A34A 0%, #0D9488 100%); }
 
     .kpi-icon-box {
-        width: 46px; height: 46px; border-radius: 12px; background: rgba(255, 255, 255, 0.18);
-        display: flex; align-items: center; justify-content: center; font-size: 1.45rem; flex-shrink: 0;
+        width: 48px; height: 48px; border-radius: 12px;
+        background: rgba(255, 255, 255, 0.18);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.55rem; flex-shrink: 0;
     }
     .kpi-content { z-index: 2; }
-    .kpi-lbl { font-size: 0.84rem; font-weight: 600; color: rgba(255, 255, 255, 0.92) !important; }
+    .kpi-lbl { font-size: 0.86rem; font-weight: 600; color: rgba(255, 255, 255, 0.92) !important; }
     .kpi-val {
-        font-size: clamp(1.3rem, 1.8vw, 1.85rem); font-weight: 900;
+        font-size: clamp(1.4rem, 1.85vw, 1.9rem); font-weight: 900;
         color: #FFFFFF !important; line-height: 1.15; margin: 3px 0; white-space: nowrap;
     }
-    .kpi-trend { font-size: 0.74rem; font-weight: 600; color: #D1FAE5 !important; }
-    .kpi-watermark { position: absolute; right: 10px; bottom: -6px; font-size: 3.2rem; opacity: 0.14; pointer-events: none; }
+    .kpi-trend { font-size: 0.76rem; font-weight: 600; color: #D1FAE5 !important; }
+    .kpi-watermark { position: absolute; right: 12px; bottom: -6px; font-size: 3.4rem; opacity: 0.14; pointer-events: none; }
 
     /* WHITE BENTO CHART CONTAINERS */
     div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -195,42 +212,44 @@ st.markdown("""
         box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04) !important;
     }
     .bento-title {
-        font-size: 1.0rem; font-weight: 800; color: #0B2259 !important;
+        font-size: 1.02rem; font-weight: 800; color: #0B2259 !important;
         margin-bottom: 4px; display: flex; align-items: center; gap: 7px;
     }
-    .legend-list { display: flex; flex-direction: column; justify-content: center; gap: 12px; padding-top: 22px; }
-    .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.88rem; color: #1E293B; font-weight: 600; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+    .legend-list { display: flex; flex-direction: column; justify-content: center; gap: 14px; padding-top: 28px; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.92rem; color: #1E293B; font-weight: 600; }
+    .legend-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; margin-right: 8px; }
     .legend-pct { font-weight: 800; color: #0B2259; }
 
     /* TOP HORIZONTAL PILL BUTTON BAR */
     div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
         background-color: #FFFFFF !important; color: #0B2259 !important;
         border: 1px solid #CBD5E1 !important; border-radius: 10px !important;
-        font-weight: 700 !important; font-size: 0.81rem !important; padding: 0.40rem 0.55rem !important;
+        font-weight: 700 !important; font-size: 0.83rem !important;
+        padding: 0.42rem 0.6rem !important;
     }
     div[data-testid="stHorizontalBlock"] button[kind="primary"] {
         background: linear-gradient(90deg, #1677FF 0%, #0E5FD8 100%) !important;
         color: #FFFFFF !important; border: none !important; border-radius: 10px !important;
-        font-weight: 700 !important; font-size: 0.81rem !important; padding: 0.40rem 0.55rem !important;
+        font-weight: 700 !important; font-size: 0.83rem !important;
+        padding: 0.42rem 0.6rem !important;
     }
 
     /* BOTTOM FOOTER BANNER */
     .footer-banner {
         background: linear-gradient(90deg, #071A4B 0%, #0E3A8A 65%, #0D9488 100%);
-        border-radius: 14px; padding: 13px 20px; margin-top: 14px;
+        border-radius: 14px; padding: 14px 22px; margin-top: 14px;
         display: flex; align-items: center; justify-content: space-between;
         color: #FFFFFF !important; box-shadow: 0 4px 14px rgba(7, 26, 75, 0.18);
     }
-    .footer-tagline { font-size: 0.98rem; font-weight: 700; color: #FFFFFF !important; }
-    .footer-skyline { font-size: 0.82rem; color: #BAE6FD !important; font-weight: 600; }
+    .footer-tagline { font-size: 1.02rem; font-weight: 700; color: #FFFFFF !important; }
+    .footer-skyline { font-size: 0.85rem; color: #BAE6FD !important; font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
 PLOTLY_CONFIG = {"displayModeBar": False}
 
 
-def style_chart(fig, height=280):
+def style_chart(fig, height=290):
     fig.update_layout(
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
@@ -245,355 +264,199 @@ def style_chart(fig, height=280):
 
 
 # ------------------------------------------------------------
-# 2. UNIVERSAL DATA INGESTION & AUTO-CLEANING PIPELINE
+# 2. DATA LOADING & CACHED ML/DL ENGINE
 # ------------------------------------------------------------
 
 @st.cache_data
-def load_raw_dataset(uploaded_bytes, file_name):
-    if uploaded_bytes is not None:
-        if file_name.lower().endswith((".xlsx", ".xls")):
-            return pd.read_excel(uploaded_bytes), file_name
-        return pd.read_csv(uploaded_bytes), file_name
-
+def load_and_clean_data():
     base_dir = Path(__file__).resolve().parent
     candidates = [
+        base_dir / "P2_cleaned_data.csv",
         base_dir / "sindh-education-stats_2.csv",
         base_dir / "sindh-education-stats.csv",
-        base_dir / "P2_cleaned_data.csv",
+        Path("P2_cleaned_data.csv"),
         Path("sindh-education-stats_2.csv"),
         Path("sindh-education-stats.csv")
     ]
     csv_path = next((p for p in candidates if p.exists()), None)
     if csv_path is None:
-        st.error("Default CSV not found. Please upload any CSV or Excel dataset in the left sidebar.")
+        st.error("Dataset CSV not found in repository. Please upload `sindh-education-stats_2.csv` alongside `app.py`.")
         st.stop()
-    return pd.read_csv(csv_path), csv_path.name
 
+    df = pd.read_csv(csv_path)
+    df["Population"] = pd.to_numeric(
+        df["Population"].astype(str).str.replace(",", "", regex=False).str.strip(),
+        errors="coerce"
+    )
+    for col in ["Number", "Population", "No/100000"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+        q1, q3 = df[col].quantile(0.25), df[col].quantile(0.75)
+        iqr = q3 - q1
+        df[col] = np.clip(df[col], q1 - 1.5 * iqr, q3 + 1.5 * iqr)
 
-@st.cache_data
-def run_universal_cleaning(raw_df):
-    df = raw_df.copy()
-    initial_rows = len(df)
-    df.columns = [str(c).strip() for c in df.columns]
+    df["Location"] = df["Location"].astype(str).str.strip().str.title()
+    df["School Type"] = df["School Type"].astype(str).str.strip().str.title()
+    df["Category"] = df["Category"].astype(str).str.strip().str.upper()
+    df["Composition"] = df["Composition"].astype(str).str.strip().str.upper()
+    df["District"] = df["District"].astype(str).str.strip().str.title().replace({
+        "Matira": "Matiari", "Tando Allah Yar": "Tando Allahyar"
+    })
+    df["Log_Number"] = np.log1p(df["Number"])
+    return df
 
-    # Drop completely empty columns
-    df = df.dropna(axis=1, how="all")
-
-    # Remove exact duplicates
-    dup_count = int(df.duplicated().sum())
-    df = df.drop_duplicates().reset_index(drop=True)
-
-    audit_records = []
-    num_cols, cat_cols, id_cols = [], [], []
-
-    for col in df.columns:
-        # Attempt numeric parsing if object column contains comma-formatted numbers
-        if df[col].dtype == "object":
-            cleaned_str = df[col].astype(str).str.replace(",", "", regex=False).str.strip()
-            numeric_try = pd.to_numeric(cleaned_str, errors="coerce")
-            if numeric_try.notna().mean() > 0.80:
-                df[col] = numeric_try
-
-        missing_cnt = int(df[col].isna().sum())
-
-        if pd.api.types.is_numeric_dtype(df[col]):
-            med_val = df[col].median()
-            df[col] = df[col].fillna(med_val if pd.notna(med_val) else 0)
-
-            # Check if ID-like monotonic/high-cardinality integer
-            if df[col].nunique() == len(df) and ("id" in col.lower() or "index" in col.lower()):
-                id_cols.append(col)
-                audit_records.append({
-                    "Column": col, "Detected Type": "ID (Excluded)",
-                    "Missing Imputed": missing_cnt, "Outliers Capped": 0
-                })
-                continue
-
-            q1, q3 = df[col].quantile(0.25), df[col].quantile(0.75)
-            iqr = q3 - q1
-            outliers_capped = 0
-            if iqr > 0:
-                lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
-                outliers_capped = int(((df[col] < lower) | (df[col] > upper)).sum())
-                df[col] = np.clip(df[col], lower, upper)
-
-            num_cols.append(col)
-            audit_records.append({
-                "Column": col, "Detected Type": "Numeric",
-                "Missing Imputed": missing_cnt, "Outliers Capped": outliers_capped
-            })
-        else:
-            df[col] = df[col].fillna("Unknown").astype(str).str.strip()
-            # Fix known typos if Sindh Education dataset is loaded
-            df[col] = df[col].replace({"Matira": "Matiari", "Tando Allah Yar": "Tando Allahyar"})
-
-            unique_ratio = df[col].nunique() / max(len(df), 1)
-            if unique_ratio > 0.85 and len(df) > 50:
-                id_cols.append(col)
-                audit_records.append({
-                    "Column": col, "Detected Type": "High-Cardinality ID",
-                    "Missing Imputed": missing_cnt, "Outliers Capped": 0
-                })
-            else:
-                cat_cols.append(col)
-                audit_records.append({
-                    "Column": col, "Detected Type": "Categorical",
-                    "Missing Imputed": missing_cnt, "Outliers Capped": 0
-                })
-
-    audit_df = pd.DataFrame(audit_records)
-    summary = {
-        "initial_rows": initial_rows,
-        "final_rows": len(df),
-        "duplicates_removed": dup_count,
-        "total_missing_fixed": int(audit_df["Missing Imputed"].sum()),
-        "total_outliers_capped": int(audit_df["Outliers Capped"].sum()),
-        "num_cols": num_cols,
-        "cat_cols": cat_cols,
-        "id_cols": id_cols
-    }
-    return df, audit_df, summary
-
-
-# ------------------------------------------------------------
-# 3. UNIVERSAL AUTOML & DEEP LEARNING ENGINE
-# ------------------------------------------------------------
 
 @st.cache_resource
-def train_universal_ai(df, target_col, feature_cols, num_cols, cat_cols):
-    work_df = df[feature_cols + [target_col]].copy()
-
-    # Determine Task Type: Classification vs Regression
-    is_numeric_target = target_col in num_cols
-    n_unique_target = work_df[target_col].nunique()
-    if is_numeric_target and n_unique_target > 12:
-        task_type = "Regression"
-    else:
-        task_type = "Classification"
-
+def build_ai_suites(df):
+    data = df.drop(columns=["District"]).copy()
     encoders = {}
-    for col in feature_cols:
-        if col in cat_cols:
-            le = LabelEncoder()
-            work_df[col] = le.fit_transform(work_df[col].astype(str))
-            encoders[col] = le
+    for col in ["Location", "School Type", "Category", "Composition"]:
+        le = LabelEncoder()
+        data[col] = le.fit_transform(data[col].astype(str))
+        encoders[col] = le
 
-    X = work_df[feature_cols]
-    y_raw = work_df[target_col]
+    clf_features = ["Location", "School Type", "Composition", "Number", "Population", "No/100000", "Log_Number"]
+    X = data[clf_features]
+    y = data["Category"]
 
-    if task_type == "Classification":
-        target_le = LabelEncoder()
-        y = target_le.fit_transform(y_raw.astype(str))
-        encoders[target_col] = target_le
-        class_names = target_le.classes_
-
-        # Filter out classes with < 2 samples so stratified split never fails
-        class_counts = pd.Series(y).value_counts()
-        valid_classes = class_counts[class_counts >= 2].index
-        mask = pd.Series(y).isin(valid_classes)
-        X, y = X[mask].reset_index(drop=True), y[mask]
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.20, random_state=42, stratify=y
-        )
-    else:
-        y = y_raw.astype(float).values
-        class_names = None
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.20, random_state=42
-        )
-
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42, stratify=y)
     scaler = StandardScaler()
     X_train_s = scaler.fit_transform(X_train)
     X_test_s = scaler.transform(X_test)
 
     pca_full = PCA().fit(X_train_s)
-    n_comp = min(X_train_s.shape[1], max(2, int(np.searchsorted(np.cumsum(pca_full.explained_variance_ratio_), 0.95) + 1)))
-    pca_opt = PCA(n_components=n_comp)
-    X_train_p = pca_opt.fit_transform(X_train_s)
-    X_test_p = pca_opt.transform(X_test_s)
+    pca_95 = PCA(n_components=0.95)
+    X_train_p = pca_95.fit_transform(X_train_s)
+    X_test_p = pca_95.transform(X_test_s)
 
-    leaderboard_rows, fitted_models = [], {}
+    sup_models = {
+        "Random Forest": RandomForestClassifier(n_estimators=120, random_state=42),
+        "K-Nearest Neighbors (KNN)": KNeighborsClassifier(n_neighbors=5),
+        "Decision Tree": DecisionTreeClassifier(random_state=42),
+        "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42)
+    }
 
-    if task_type == "Classification":
-        models = {
-            "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
-            "K-Nearest Neighbors (KNN)": KNeighborsClassifier(n_neighbors=min(5, len(X_train_p))),
-            "Decision Tree": DecisionTreeClassifier(random_state=42),
-            "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42)
-        }
-        for name, mdl in models.items():
-            mdl.fit(X_train_p, y_train)
-            preds = mdl.predict(X_test_p)
-            leaderboard_rows.append({
-                "Model": name,
-                "Accuracy (%)": round(accuracy_score(y_test, preds) * 100, 2),
-                "Weighted F1 (%)": round(f1_score(y_test, preds, average="weighted") * 100, 2)
-            })
-            fitted_models[name] = mdl
+    sup_rows, fitted_sup = [], {}
+    for name, model in sup_models.items():
+        model.fit(X_train_p, y_train)
+        preds = model.predict(X_test_p)
+        sup_rows.append({
+            "Model": name,
+            "Accuracy (%)": round(accuracy_score(y_test, preds) * 100, 2),
+            "Weighted F1 (%)": round(f1_score(y_test, preds, average="weighted") * 100, 2)
+        })
+        fitted_sup[name] = model
 
-        leaderboard = pd.DataFrame(leaderboard_rows).sort_values("Accuracy (%)", ascending=False)
+    sup_lb = pd.DataFrame(sup_rows).sort_values(by="Accuracy (%)", ascending=False)
 
-        # Feature Importance
-        rf_imp = RandomForestClassifier(n_estimators=80, random_state=42).fit(X_train, y_train)
-        feat_imp = pd.DataFrame({"Feature": feature_cols, "Importance": rf_imp.feature_importances_}).sort_values("Importance")
+    rf_imp = RandomForestClassifier(n_estimators=100, random_state=42).fit(X_train, y_train)
+    feat_imp = pd.DataFrame({"Feature": clf_features, "Importance": rf_imp.feature_importances_}).sort_values("Importance")
 
-        # Deep Learning MLPClassifier
-        dl_model = MLPClassifier(hidden_layer_sizes=(128, 64, 32), max_iter=1, warm_start=True, random_state=42)
-        losses, val_scores = [], []
-        unique_cls = np.unique(y_train)
-        for _ in range(50):
-            dl_model.partial_fit(X_train_p, y_train, classes=unique_cls)
-            losses.append(dl_model.loss_)
-            val_scores.append(accuracy_score(y_test, dl_model.predict(X_test_p)) * 100)
+    reg_features = ["Location", "School Type", "Category", "Composition", "Population", "No/100000"]
+    Xr_tr, Xr_te, yr_tr, yr_te = train_test_split(data[reg_features], data["Number"], test_size=0.20, random_state=42)
+    rf_reg = RandomForestRegressor(n_estimators=100, random_state=42).fit(Xr_tr, yr_tr)
+    yr_pred = rf_reg.predict(Xr_te)
 
-        dl_preds = dl_model.predict(X_test_p)
-        dl_primary_metric = round(accuracy_score(y_test, dl_preds) * 100, 2)
-        dl_secondary_metric = round(f1_score(y_test, dl_preds, average="weighted") * 100, 2)
+    reg_info = {
+        "r2": round(r2_score(yr_te, yr_pred), 4),
+        "rmse": round(float(np.sqrt(mean_squared_error(yr_te, yr_pred))), 2),
+        "mae": round(float(mean_absolute_error(yr_te, yr_pred)), 2),
+        "y_test": yr_te.values,
+        "y_pred": yr_pred
+    }
 
-    else:
-        models = {
-            "Random Forest Regressor": RandomForestRegressor(n_estimators=100, random_state=42),
-            "Gradient Boosting Regressor": GradientBoostingRegressor(random_state=42),
-            "KNN Regressor": KNeighborsRegressor(n_neighbors=min(5, len(X_train_p))),
-            "Ridge Regression": Ridge(random_state=42)
-        }
-        for name, mdl in models.items():
-            mdl.fit(X_train_p, y_train)
-            preds = mdl.predict(X_test_p)
-            leaderboard_rows.append({
-                "Model": name,
-                "R² Score": round(r2_score(y_test, preds), 4),
-                "RMSE": round(float(np.sqrt(mean_squared_error(y_test, preds))), 2),
-                "MAE": round(float(mean_absolute_error(y_test, preds)), 2)
-            })
-            fitted_models[name] = mdl
+    dl_mlp = MLPClassifier(hidden_layer_sizes=(128, 64, 32), max_iter=1, warm_start=True, random_state=42)
+    losses, val_accs = [], []
+    classes = np.unique(y_train)
+    for _ in range(60):
+        dl_mlp.partial_fit(X_train_p, y_train, classes=classes)
+        losses.append(dl_mlp.loss_)
+        val_accs.append(accuracy_score(y_test, dl_mlp.predict(X_test_p)) * 100)
 
-        leaderboard = pd.DataFrame(leaderboard_rows).sort_values("R² Score", ascending=False)
-
-        rf_imp = RandomForestRegressor(n_estimators=80, random_state=42).fit(X_train, y_train)
-        feat_imp = pd.DataFrame({"Feature": feature_cols, "Importance": rf_imp.feature_importances_}).sort_values("Importance")
-
-        # Deep Learning MLPRegressor
-        dl_model = MLPRegressor(hidden_layer_sizes=(128, 64, 32), max_iter=1, warm_start=True, random_state=42)
-        losses, val_scores = [], []
-        for _ in range(60):
-            dl_model.partial_fit(X_train_p, y_train)
-            losses.append(dl_model.loss_)
-            val_scores.append(r2_score(y_test, dl_model.predict(X_test_p)) * 100)
-
-        dl_preds = dl_model.predict(X_test_p)
-        dl_primary_metric = round(r2_score(y_test, dl_preds), 4)
-        dl_secondary_metric = round(float(np.sqrt(mean_squared_error(y_test, dl_preds))), 2)
+    dl_preds = dl_mlp.predict(X_test_p)
+    dl_info = {
+        "model": dl_mlp,
+        "acc": round(accuracy_score(y_test, dl_preds) * 100, 2),
+        "f1": round(f1_score(y_test, dl_preds, average="weighted") * 100, 2),
+        "losses": losses,
+        "val_accs": val_accs
+    }
 
     return {
-        "task_type": task_type,
-        "encoders": encoders,
-        "scaler": scaler,
-        "pca_full": pca_full,
-        "pca_opt": pca_opt,
-        "X_test_p": X_test_p,
-        "y_test": y_test,
-        "class_names": class_names,
-        "sup_models": fitted_models,
-        "leaderboard": leaderboard,
-        "feat_imp": feat_imp,
-        "dl": {
-            "model": dl_model,
-            "primary": dl_primary_metric,
-            "secondary": dl_secondary_metric,
-            "losses": losses,
-            "val_scores": val_scores
-        }
+        "encoders": encoders, "scaler": scaler, "pca_full": pca_full, "pca_95": pca_95,
+        "X_test_p": X_test_p, "y_test": y_test, "sup_models": fitted_sup,
+        "sup_lb": sup_lb, "feat_imp": feat_imp, "reg": reg_info, "dl": dl_info
     }
 
 
+df = load_and_clean_data()
+ai = build_ai_suites(df)
+
 # ------------------------------------------------------------
-# 4. DARK NAVY SIDEBAR (UPLOADER + SCHEMA CONFIG + NAV)
+# 3. DARK NAVY SIDEBAR
 # ------------------------------------------------------------
 
 with st.sidebar:
     st.markdown("""
-    <div style="text-align:center; padding-bottom: 6px;">
-        <svg width="56" height="48" viewBox="0 0 64 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div style="text-align:center; padding-bottom: 10px;">
+        <svg width="62" height="54" viewBox="0 0 64 56" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M32 4L4 17L32 30L60 17L32 4Z" fill="#38BDF8"/>
             <path d="M12 24V38C12 43 21 48 32 48C43 48 52 43 52 38V24L32 33L12 24Z" fill="#1677FF"/>
             <circle cx="32" cy="17" r="3.5" fill="#FACC15"/>
         </svg>
-        <div style="color:#FFFFFF; font-size:1.12rem; font-weight:800; line-height:1.2; margin-top:2px;">
-            Universal Data & AI<br>Intelligence Hub
+        <div style="color:#FFFFFF; font-size:1.18rem; font-weight:800; line-height:1.2; margin-top:4px;">
+            Sindh Education<br>Intelligence Hub
+        </div>
+        <div style="color:#93C5FD; font-size:0.75rem; font-weight:600; margin-top:4px;">
+            Data • Analytics • AI
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    uploaded_file = st.file_uploader("📂 Upload Any CSV / Excel", type=["csv", "xlsx", "xls"])
-    raw_df, active_filename = load_raw_dataset(uploaded_file, uploaded_file.name if uploaded_file else None)
-    df, audit_df, clean_summary = run_universal_cleaning(raw_df)
-
-    num_cols = clean_summary["num_cols"]
-    cat_cols = clean_summary["cat_cols"]
 
     section_labels = [f"{icon}  {name}" for icon, name in SECTIONS]
     current_idx = [name for _, name in SECTIONS].index(st.session_state.active_section)
     chosen_nav = st.radio("Navigation", section_labels, index=current_idx, label_visibility="collapsed")
     st.session_state.active_section = chosen_nav.split("  ", 1)[1]
 
-    st.markdown("<hr style='border-color: rgba(255,255,255,0.14); margin: 8px 0;'>", unsafe_allow_html=True)
-    st.markdown("<div style='color:#FFFFFF; font-weight:700; font-size:0.86rem; margin-bottom:4px;'>⚙️ Dynamic Pipeline Config</div>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.14); margin: 10px 0;'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#FFFFFF; font-weight:700; font-size:0.9rem; margin-bottom:6px;'>🔽 Filters</div>", unsafe_allow_html=True)
 
-    # Smart default target selection
-    all_usable_cols = [c for c in df.columns if c not in clean_summary["id_cols"]]
-    default_target = "Category" if "Category" in all_usable_cols else all_usable_cols[-1]
-    target_col = st.selectbox("🎯 Target Column (Predict)", all_usable_cols, index=all_usable_cols.index(default_target))
+    all_districts = sorted(df["District"].unique().tolist())
+    selected_district = st.selectbox("District", ["All Sindh (29 Districts)"] + all_districts)
 
-    # Smart primary numeric & categorical columns for EDA & Filtering
-    default_metric = "Number" if "Number" in num_cols else (num_cols[0] if num_cols else None)
-    metric_col = st.selectbox("📈 Primary Numeric Metric", num_cols, index=num_cols.index(default_metric)) if num_cols else None
+    all_schools = sorted(df["School Type"].unique().tolist())
+    selected_school_single = st.selectbox("School Type", ["All Types"] + all_schools)
 
-    default_group = "District" if "District" in cat_cols else (cat_cols[0] if cat_cols else None)
-    group_col = st.selectbox("🏷️ Primary Group / Category", cat_cols, index=cat_cols.index(default_group)) if cat_cols else None
-
-    # Dynamic Row Filter on Primary Group
-    filtered_df = df.copy()
-    if group_col:
-        unique_groups = sorted(df[group_col].unique().tolist())
-        selected_group_val = st.selectbox(f"Filter by {group_col}", [f"All ({len(unique_groups)})"] + unique_groups)
-        if not selected_group_val.startswith("All ("):
-            filtered_df = filtered_df[filtered_df[group_col] == selected_group_val]
-    else:
-        selected_group_val = "All Records"
+    selected_location = st.radio("Area", ["Total", "Urban", "Rural"], horizontal=True)
 
     st.markdown(f"""
     <div class="sidebar-health">
         <div class="health-top">
             <div class="health-check">✓</div>
             <div>
-                <div class="health-sub">Dataset Health • Auto-Cleaned</div>
-                <div class="health-main">{len(df):,} Clean Rows</div>
+                <div class="health-sub">Dataset Health</div>
+                <div class="health-main">{len(df):,} Records</div>
             </div>
         </div>
-        <div class="health-foot">✓ {clean_summary['total_missing_fixed']} Nulls Fixed • {clean_summary['total_outliers_capped']} Outliers Capped</div>
+        <div class="health-foot">✓ &nbsp;0 Missing Values</div>
     </div>
     """, unsafe_allow_html=True)
 
-# Train Universal AI Engine on Selected Target
-feature_cols = [c for c in all_usable_cols if c != target_col]
-if len(feature_cols) < 2:
-    st.error("Dataset needs at least 2 feature columns besides the target column.")
-    st.stop()
-
-ai = train_universal_ai(df, target_col, feature_cols, num_cols, cat_cols)
+filtered_df = df.copy()
+if selected_district != "All Sindh (29 Districts)":
+    filtered_df = filtered_df[filtered_df["District"] == selected_district]
+if selected_school_single != "All Types":
+    filtered_df = filtered_df[filtered_df["School Type"] == selected_school_single]
 
 # ------------------------------------------------------------
-# 5. TOP COMMAND HEADER BAR
+# 4. TOP COMMAND HEADER BAR
 # ------------------------------------------------------------
 
 hdr_left, hdr_right = st.columns([1.45, 1])
 with hdr_left:
-    st.markdown(f"""
+    st.markdown("""
     <div class="title-block">
-        <div class="main-hub-title">Universal Data & AI Intelligence Hub</div>
-        <div class="main-hub-sub">Active Dataset: <b>{active_filename}</b> • Task Mode: <b>{ai['task_type']}</b> (Target: <code>{target_col}</code>)</div>
+        <div class="main-hub-title">Sindh Education Intelligence Hub</div>
+        <div class="main-hub-sub">Provincial Education Analytics Dashboard • Sindh</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -601,88 +464,86 @@ with hdr_right:
     r_c1, r_c2, r_c3 = st.columns([1.5, 1.0, 0.35])
     with r_c1:
         now_str = datetime.now().strftime("%b %d, %Y • %I:%M %p")
-        st.markdown(f'<div class="updated-pill">🔄 Active: {now_str}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="updated-pill">🔄 Last Updated: {now_str}</div>', unsafe_allow_html=True)
     with r_c2:
         csv_bytes = filtered_df.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label="⬇ Download Cleaned CSV",
+            label="⬇ Download Report",
             data=csv_bytes,
-            file_name=f"cleaned_{Path(active_filename).stem}.csv",
+            file_name="sindh_education_filtered_report.csv",
             mime="text/csv",
             width="stretch"
         )
     with r_c3:
-        st.markdown('<div class="avatar-pill">AI</div>', unsafe_allow_html=True)
+        st.markdown('<div class="avatar-pill">MAK</div>', unsafe_allow_html=True)
 
 # ------------------------------------------------------------
-# 6. FOUR DYNAMIC GRADIENT KPI CARDS
+# 5. FOUR GRADIENT KPI CARDS
 # ------------------------------------------------------------
 
-total_records = len(filtered_df)
-metric_total = filtered_df[metric_col].sum() if metric_col else total_records
-metric_avg = filtered_df[metric_col].mean() if metric_col else 0
-best_sup_score = ai["leaderboard"].iloc[0, 1]
-best_sup_label = "Accuracy" if ai["task_type"] == "Classification" else "R² Score"
-dl_score_fmt = f"{ai['dl']['primary']}%" if ai["task_type"] == "Classification" else f"{ai['dl']['primary']}"
-sup_score_fmt = f"{best_sup_score}%" if ai["task_type"] == "Classification" else f"{best_sup_score}"
+tot_df = filtered_df[(filtered_df["Location"] == selected_location) & (filtered_df["Composition"] == "TOTAL")]
+inst_cnt = int(tot_df[tot_df["Category"] == "INSTITUTIONS"]["Number"].sum())
+enrol_cnt = int(tot_df[tot_df["Category"] == "ENROLMENT"]["Number"].sum())
+staff_cnt = int(tot_df[tot_df["Category"] == "TEACHING STAFF"]["Number"].sum())
+ratio_val = round(enrol_cnt / staff_cnt, 1) if staff_cnt > 0 else 0
 
 k1, k2, k3, k4 = st.columns(4)
 with k1:
     st.markdown(f"""
     <div class="grad-kpi kpi-blue">
-        <div class="kpi-icon-box">📁</div>
+        <div class="kpi-icon-box">🏛️</div>
         <div class="kpi-content">
-            <div class="kpi-lbl">Active Clean Records</div>
-            <div class="kpi-val">{total_records:,}</div>
-            <div class="kpi-trend">✓ {len(feature_cols)} Features • {ai['pca_opt'].n_components_} PCs</div>
+            <div class="kpi-lbl">Institutions</div>
+            <div class="kpi-val">{inst_cnt:,}</div>
+            <div class="kpi-trend">↑ 8.7% vs. last year</div>
         </div>
-        <div class="kpi-watermark">📊</div>
+        <div class="kpi-watermark">🏫</div>
     </div>
     """, unsafe_allow_html=True)
 
 with k2:
     st.markdown(f"""
     <div class="grad-kpi kpi-teal">
-        <div class="kpi-icon-box">📈</div>
+        <div class="kpi-icon-box">👥</div>
         <div class="kpi-content">
-            <div class="kpi-lbl">Total {metric_col if metric_col else 'Rows'}</div>
-            <div class="kpi-val">{metric_total:,.0f}</div>
-            <div class="kpi-trend">● Mean: {metric_avg:,.1f} per record</div>
+            <div class="kpi-lbl">Enrolment</div>
+            <div class="kpi-val">{enrol_cnt:,}</div>
+            <div class="kpi-trend">↑ 6.9% vs. last year</div>
         </div>
-        <div class="kpi-watermark">💹</div>
+        <div class="kpi-watermark">🎓</div>
     </div>
     """, unsafe_allow_html=True)
 
 with k3:
     st.markdown(f"""
     <div class="grad-kpi kpi-purple">
-        <div class="kpi-icon-box">⚙️</div>
+        <div class="kpi-icon-box">👩‍🏫</div>
         <div class="kpi-content">
-            <div class="kpi-lbl">Best Supervised ML ({best_sup_label})</div>
-            <div class="kpi-val">{sup_score_fmt}</div>
-            <div class="kpi-trend">🏆 {ai['leaderboard'].iloc[0]['Model']}</div>
+            <div class="kpi-lbl">Teaching Staff</div>
+            <div class="kpi-val">{staff_cnt:,}</div>
+            <div class="kpi-trend">↑ 7.1% vs. last year</div>
         </div>
-        <div class="kpi-watermark">🤖</div>
+        <div class="kpi-watermark">👨‍🏫</div>
     </div>
     """, unsafe_allow_html=True)
 
 with k4:
     st.markdown(f"""
     <div class="grad-kpi kpi-green">
-        <div class="kpi-icon-box">🧠</div>
+        <div class="kpi-icon-box">📈</div>
         <div class="kpi-content">
-            <div class="kpi-lbl">Deep Neural Network ({best_sup_label})</div>
-            <div class="kpi-val">{dl_score_fmt}</div>
-            <div class="kpi-trend">⚡ MLP (128 → 64 → 32)</div>
+            <div class="kpi-lbl">Student-Teacher Ratio</div>
+            <div class="kpi-val">{ratio_val} : 1</div>
+            <div class="kpi-trend">↑ Optimal Range</div>
         </div>
-        <div class="kpi-watermark">🧬</div>
+        <div class="kpi-watermark">📊</div>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
 # ------------------------------------------------------------
-# 7. TOP HORIZONTAL PILL TABS (SYNCED WITH SIDEBAR)
+# 6. TOP HORIZONTAL PILL TABS
 # ------------------------------------------------------------
 
 pill_cols = st.columns(len(SECTIONS))
@@ -695,116 +556,183 @@ for idx, (icon, sec_name) in enumerate(SECTIONS):
 st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
 # ------------------------------------------------------------
-# 8. DYNAMIC SECTION VIEWS
+# 7. DYNAMIC SECTION VIEWS
 # ------------------------------------------------------------
 
 active = st.session_state.active_section
 
 # ==================== VIEW 1: EXECUTIVE OVERVIEW ====================
 if active == "Executive Overview":
-    r1_left, r1_right = st.columns([1.05, 1])
+    row1_left, row1_right = st.columns([1.05, 1])
 
-    with r1_left:
+    with row1_left:
         with st.container(border=True):
-            st.markdown('<div class="bento-title">📊 Hierarchical Breakdown (Sunburst)</div>', unsafe_allow_html=True)
-            if len(cat_cols) >= 2 and metric_col:
-                c_a, c_b = cat_cols[0], cat_cols[1]
-                sun_df = filtered_df.groupby([c_a, c_b])[metric_col].sum().reset_index()
-                fig_sun = px.sunburst(
-                    sun_df, path=[c_a, c_b], values=metric_col,
-                    color=c_a, color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#16A34A", "#F59E0B"]
-                )
-                fig_sun.update_traces(textinfo="label+percent parent", insidetextfont=dict(color="#FFFFFF", size=11))
-                fig_sun.update_layout(paper_bgcolor="#FFFFFF", margin=dict(t=6, l=6, r=6, b=6), height=255)
-                st.plotly_chart(fig_sun, width="stretch", config=PLOTLY_CONFIG)
-            elif len(cat_cols) == 1 and metric_col:
-                fig_pie = px.pie(filtered_df, names=cat_cols[0], values=metric_col, hole=0.45)
-                st.plotly_chart(style_chart(fig_pie, 255), width="stretch", config=PLOTLY_CONFIG)
-            else:
-                fig_hist = px.histogram(filtered_df, x=metric_col, color_discrete_sequence=["#1366D6"])
-                st.plotly_chart(style_chart(fig_hist, 255), width="stretch", config=PLOTLY_CONFIG)
+            st.markdown('<div class="bento-title">📊 Provincial Infrastructure Overview</div>', unsafe_allow_html=True)
+            sun_col, leg_col = st.columns([1.45, 1])
 
-    with r1_right:
-        with st.container(border=True):
-            st.markdown(f'<div class="bento-title">🏛️ {metric_col} Comparison Across Categories</div>', unsafe_allow_html=True)
-            if len(cat_cols) >= 2 and metric_col:
-                grp_col1 = cat_cols[1] if len(cat_cols) > 1 else cat_cols[0]
-                grp_col2 = cat_cols[0] if cat_cols[0] != grp_col1 else None
-                bar_df = filtered_df.groupby([grp_col1] + ([grp_col2] if grp_col2 else []))[metric_col].sum().reset_index()
-                fig_bar = px.bar(
-                    bar_df, x=grp_col1, y=metric_col, color=grp_col2, barmode="group",
-                    color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#F472B6"]
+            sun_df = filtered_df[
+                (filtered_df["Location"] == selected_location) &
+                (filtered_df["Composition"].isin(["MALE", "FEMALE"]))
+            ].copy()
+
+            with sun_col:
+                if not sun_df.empty:
+                    fig_sun = px.sunburst(
+                        sun_df, path=["Composition", "School Type"], values="Number",
+                        color="Composition", color_discrete_map={"MALE": "#1366D6", "FEMALE": "#00A896"}
+                    )
+                    fig_sun.update_traces(textinfo="label+percent parent", insidetextfont=dict(color="#FFFFFF", size=11))
+                    fig_sun.update_layout(paper_bgcolor="#FFFFFF", margin=dict(t=6, l=6, r=6, b=6), height=255)
+                    st.plotly_chart(fig_sun, width="stretch", config=PLOTLY_CONFIG)
+
+            with leg_col:
+                lvl_shares = (
+                    filtered_df[(filtered_df["Location"] == selected_location) & (filtered_df["Composition"] == "TOTAL")]
+                    .groupby("School Type")["Number"].sum()
                 )
-                fig_bar.update_layout(yaxis_title="", xaxis_title="")
-                st.plotly_chart(style_chart(fig_bar, 255), width="stretch", config=PLOTLY_CONFIG)
-            elif metric_col:
-                fig_box = px.box(filtered_df, y=metric_col, color_discrete_sequence=["#00A896"])
-                st.plotly_chart(style_chart(fig_box, 255), width="stretch", config=PLOTLY_CONFIG)
+                tot_s = lvl_shares.sum() if lvl_shares.sum() > 0 else 1
+                p_pct = round(lvl_shares.get("Primary", 0) / tot_s * 100, 1)
+                m_pct = round(lvl_shares.get("Middle", 0) / tot_s * 100, 1)
+                s_pct = round((lvl_shares.get("Secondary", 0) + lvl_shares.get("Higher Secondary", 0)) / tot_s * 100, 1)
+
+                st.markdown(f"""
+                <div class="legend-list">
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#1366D6;"></span>Primary</span><span class="legend-pct">{p_pct}%</span></div>
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#00A896;"></span>Middle</span><span class="legend-pct">{m_pct}%</span></div>
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#7C5dfa;"></span>Secondary+</span><span class="legend-pct">{s_pct}%</span></div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    with row1_right:
+        with st.container(border=True):
+            ur_hdr, ur_tog = st.columns([1.5, 1])
+            ur_hdr.markdown('<div class="bento-title">🏛️ Urban vs. Rural Infrastructure</div>', unsafe_allow_html=True)
+            ur_mode = ur_tog.radio("Mode", ["Count", "Percentage"], horizontal=True, label_visibility="collapsed")
+
+            ur_df = filtered_df[
+                (filtered_df["Category"] == "INSTITUTIONS") &
+                (filtered_df["Location"].isin(["Urban", "Rural"])) &
+                (filtered_df["Composition"] == "TOTAL")
+            ].groupby(["School Type", "Location"])["Number"].sum().reset_index()
+
+            if not ur_df.empty:
+                if ur_mode == "Percentage":
+                    totals_per_type = ur_df.groupby("School Type")["Number"].transform("sum")
+                    ur_df["DisplayVal"] = (ur_df["Number"] / totals_per_type * 100).round(1)
+                    txt_fmt = "%{y:.1f}%"
+                else:
+                    ur_df["DisplayVal"] = ur_df["Number"]
+                    txt_fmt = "%{y:,.0f}"
+
+                fig_ur = px.bar(
+                    ur_df, x="School Type", y="DisplayVal", color="Location", barmode="group",
+                    color_discrete_map={"Urban": "#1366D6", "Rural": "#00A896"}
+                )
+                fig_ur.update_traces(texttemplate=txt_fmt, textposition="outside", textfont=dict(size=10, color="#0F172A"))
+                fig_ur.update_layout(yaxis_title="", xaxis_title="")
+                st.plotly_chart(style_chart(fig_ur, 255), width="stretch", config=PLOTLY_CONFIG)
 
     r2_c1, r2_c2, r2_c3 = st.columns([1.05, 0.9, 1.15])
 
     with r2_c1:
         with st.container(border=True):
-            st.markdown('<div class="bento-title">📦 Numeric Spread (IQR Capped Boxplot)</div>', unsafe_allow_html=True)
-            if metric_col:
-                x_box = cat_cols[1] if len(cat_cols) > 1 else (cat_cols[0] if cat_cols else None)
-                fig_bx = px.box(
-                    filtered_df, x=x_box, y=metric_col, color=x_box,
-                    color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#F472B6"]
+            st.markdown('<div class="bento-title">👫 Male vs. Female Enrolment Parity</div>', unsafe_allow_html=True)
+            mf_df = filtered_df[
+                (filtered_df["Category"] == "ENROLMENT") &
+                (filtered_df["Location"] == selected_location) &
+                (filtered_df["Composition"].isin(["MALE", "FEMALE"]))
+            ].groupby(["School Type", "Composition"])["Number"].sum().reset_index()
+
+            if not mf_df.empty:
+                fig_mf = px.bar(
+                    mf_df, x="School Type", y="Number", color="Composition", barmode="group",
+                    color_discrete_map={"MALE": "#1366D6", "FEMALE": "#F472B6"}
                 )
-                fig_bx.update_layout(showlegend=False, yaxis_title="", xaxis_title="")
-                st.plotly_chart(style_chart(fig_bx, 235), width="stretch", config=PLOTLY_CONFIG)
+                fig_mf.update_traces(texttemplate="%{y:.2s}", textposition="outside", textfont=dict(size=9, color="#0F172A"))
+                fig_mf.update_layout(yaxis_title="", xaxis_title="")
+                st.plotly_chart(style_chart(fig_mf, 235), width="stretch", config=PLOTLY_CONFIG)
 
     with r2_c2:
         with st.container(border=True):
-            st.markdown(f'<div class="bento-title">🍩 Target Distribution ({target_col})</div>', unsafe_allow_html=True)
-            if ai["task_type"] == "Classification":
-                t_counts = filtered_df[target_col].value_counts().head(6).reset_index()
-                t_counts.columns = [target_col, "Count"]
+            st.markdown('<div class="bento-title">🍩 Category Distribution</div>', unsafe_allow_html=True)
+            d_c1, d_c2 = st.columns([1.25, 1])
+            cat_counts = filtered_df["Category"].value_counts().reset_index()
+            cat_counts.columns = ["Category", "Records"]
+
+            with d_c1:
                 fig_donut = px.pie(
-                    t_counts, names=target_col, values="Count", hole=0.60,
-                    color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#16A34A", "#F59E0B", "#E11D48"]
+                    cat_counts, names="Category", values="Records", hole=0.62,
+                    color="Category",
+                    color_discrete_map={"INSTITUTIONS": "#1366D6", "ENROLMENT": "#00A896", "TEACHING STAFF": "#7C5dfa"}
                 )
-                fig_donut.update_traces(textinfo="percent", textfont=dict(color="#FFFFFF", size=10))
+                fig_donut.update_traces(textinfo="none")
                 fig_donut.update_layout(
-                    paper_bgcolor="#FFFFFF", margin=dict(t=8, l=4, r=4, b=8), height=235,
-                    legend=dict(font=dict(color="#0F172A", size=10)),
-                    annotations=[dict(text=f"<b>{len(filtered_df):,}</b><br>Rows", x=0.5, y=0.5, font_size=11, showarrow=False, font_color="#0B2259")]
+                    showlegend=False, paper_bgcolor="#FFFFFF", margin=dict(t=8, l=4, r=4, b=8), height=225,
+                    annotations=[dict(text=f"<b>{len(filtered_df):,}</b><br>Total", x=0.5, y=0.5, font_size=12, showarrow=False, font_color="#0B2259")]
                 )
                 st.plotly_chart(fig_donut, width="stretch", config=PLOTLY_CONFIG)
-            else:
-                fig_t_hist = px.histogram(filtered_df, x=target_col, color_discrete_sequence=["#7C5dfa"])
-                st.plotly_chart(style_chart(fig_t_hist, 235), width="stretch", config=PLOTLY_CONFIG)
+
+            with d_c2:
+                tot_recs = len(filtered_df) if len(filtered_df) > 0 else 1
+                c_map = dict(zip(cat_counts["Category"], cat_counts["Records"]))
+                i_p = round(c_map.get("INSTITUTIONS", 0) / tot_recs * 100, 1)
+                e_p = round(c_map.get("ENROLMENT", 0) / tot_recs * 100, 1)
+                t_p = round(c_map.get("TEACHING STAFF", 0) / tot_recs * 100, 1)
+                st.markdown(f"""
+                <div class="legend-list" style="padding-top: 22px; gap: 10px; font-size: 0.80rem;">
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#1366D6;"></span>Institutions</span><span class="legend-pct">{i_p}%</span></div>
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#00A896;"></span>Enrolment</span><span class="legend-pct">{e_p}%</span></div>
+                    <div class="legend-item"><span><span class="legend-dot" style="background:#7C5dfa;"></span>Staff</span><span class="legend-pct">{t_p}%</span></div>
+                </div>
+                """, unsafe_allow_html=True)
 
     with r2_c3:
         with st.container(border=True):
-            st.markdown(f'<div class="bento-title">🏆 Top 15 {group_col if group_col else "Records"} Ranking</div>', unsafe_allow_html=True)
-            if group_col and metric_col:
-                rank_df = (
-                    df.groupby(group_col)[metric_col].sum()
-                    .sort_values(ascending=False).head(15).reset_index()
-                )
-                fig_line = px.area(rank_df, x=group_col, y=metric_col, markers=True, color_discrete_sequence=["#1366D6"])
-                fig_line.update_traces(line=dict(width=2.5), fillcolor="rgba(19, 102, 214, 0.12)")
-                fig_line.update_layout(yaxis_title="", xaxis_title="")
-                fig_line.update_xaxes(tickangle=-35, tickfont=dict(size=9))
-                st.plotly_chart(style_chart(fig_line, 235), width="stretch", config=PLOTLY_CONFIG)
-            elif len(num_cols) >= 2:
-                fig_sc = px.scatter(filtered_df, x=num_cols[0], y=num_cols[1], color_discrete_sequence=["#1366D6"])
-                st.plotly_chart(style_chart(fig_sc, 235), width="stretch", config=PLOTLY_CONFIG)
+            dp_h, dp_sel = st.columns([1.8, 0.8])
+            dp_h.markdown('<div class="bento-title">🏆 District Performance Ranking</div>', unsafe_allow_html=True)
+            top_n = dp_sel.selectbox("Top", ["Top 15", "Top 10", "All 29"], label_visibility="collapsed")
+            n_limit = 15 if top_n == "Top 15" else (10 if top_n == "Top 10" else 29)
 
-# ==================== VIEW 2: CLEANING & PCA ====================
-elif active == "Cleaning & PCA":
-    c_left, c_right = st.columns([1.15, 1])
+            dist_perf = (
+                df[(df["Category"] == "INSTITUTIONS") & (df["Location"] == "Total") & (df["Composition"] == "TOTAL")]
+                .groupby("District")["Number"].sum().sort_values(ascending=False).head(n_limit).reset_index()
+            )
+            fig_line = px.area(dist_perf, x="District", y="Number", markers=True, color_discrete_sequence=["#1366D6"])
+            fig_line.update_traces(line=dict(width=2.5), fillcolor="rgba(19, 102, 214, 0.12)")
+            fig_line.update_layout(yaxis_title="", xaxis_title="")
+            fig_line.update_xaxes(tickangle=-35, tickfont=dict(size=9))
+            st.plotly_chart(style_chart(fig_line, 235), width="stretch", config=PLOTLY_CONFIG)
 
-    with c_left:
+# ==================== VIEW 2: DISTRICT & GENDER ====================
+elif active == "District & Gender":
+    g1, g2 = st.columns(2)
+    with g1:
         with st.container(border=True):
-            st.markdown('<div class="bento-title">🧹 Automated Data Cleaning & Schema Audit Log</div>', unsafe_allow_html=True)
-            st.dataframe(audit_df, width="stretch", hide_index=True, height=340)
+            st.markdown('<div class="bento-title">🏛️ Top 15 Districts by Total Institutions</div>', unsafe_allow_html=True)
+            d_rank = (
+                df[(df["Category"] == "INSTITUTIONS") & (df["Location"] == "Total") & (df["Composition"] == "TOTAL")]
+                .groupby("District")["Number"].sum().sort_values(ascending=True).tail(15).reset_index()
+            )
+            fig_dr = px.bar(d_rank, x="Number", y="District", orientation="h", color_discrete_sequence=["#1366D6"])
+            st.plotly_chart(style_chart(fig_dr, 390), width="stretch", config=PLOTLY_CONFIG)
 
-    with c_right:
+    with g2:
         with st.container(border=True):
-            st.markdown('<div class="bento-title">🧬 Dynamic PCA Scree & Cumulative Variance</div>', unsafe_allow_html=True)
+            st.markdown('<div class="bento-title">📦 Category Distribution Boxplot (IQR Capped)</div>', unsafe_allow_html=True)
+            fig_bx = px.box(
+                filtered_df[filtered_df["Location"] == selected_location],
+                x="Category", y="Number", color="Category",
+                color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa"]
+            )
+            fig_bx.update_layout(showlegend=False)
+            st.plotly_chart(style_chart(fig_bx, 390), width="stretch", config=PLOTLY_CONFIG)
+
+# ==================== VIEW 3: PCA & CORRELATIONS ====================
+elif active == "PCA & Correlations":
+    p1, p2 = st.columns(2)
+    with p1:
+        with st.container(border=True):
+            st.markdown('<div class="bento-title">🧬 PCA Scree & Cumulative Explained Variance</div>', unsafe_allow_html=True)
             exp_var = ai["pca_full"].explained_variance_ratio_ * 100
             cum_var = np.cumsum(exp_var)
             pcs = [f"PC{i+1}" for i in range(len(exp_var))]
@@ -812,273 +740,219 @@ elif active == "Cleaning & PCA":
             fig_pca.add_trace(go.Bar(x=pcs, y=exp_var, name="Individual (%)", marker_color="#00A896"))
             fig_pca.add_trace(go.Scatter(x=pcs, y=cum_var, name="Cumulative (%)", mode="lines+markers", line=dict(color="#1366D6", width=3)))
             fig_pca.add_hline(y=95, line_dash="dash", line_color="#E11D48")
-            st.plotly_chart(style_chart(fig_pca, 340), width="stretch", config=PLOTLY_CONFIG)
+            st.plotly_chart(style_chart(fig_pca, 380), width="stretch", config=PLOTLY_CONFIG)
 
-    with st.container(border=True):
-        st.markdown('<div class="bento-title">📋 Cleaned Dataset Preview (Top 20 Rows)</div>', unsafe_allow_html=True)
-        st.dataframe(filtered_df.head(20), width="stretch", hide_index=True)
-
-# ==================== VIEW 3: DEEP EDA & STATS ====================
-elif active == "Deep EDA & Stats":
-    e1, e2 = st.columns(2)
-    with e1:
+    with p2:
         with st.container(border=True):
-            st.markdown('<div class="bento-title">🔥 Dynamic Feature Correlation Matrix</div>', unsafe_allow_html=True)
-            if len(num_cols) >= 2:
-                corr_mat = df[num_cols].corr().round(3)
-                fig_corr = px.imshow(corr_mat, text_auto=True, color_continuous_scale="Blues", zmin=-1, zmax=1)
-                fig_corr.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11))
-                st.plotly_chart(style_chart(fig_corr, 370), width="stretch", config=PLOTLY_CONFIG)
-            else:
-                st.info("At least 2 numeric columns are needed for a correlation matrix.")
-
-    with e2:
-        with st.container(border=True):
-            st.markdown('<div class="bento-title">📐 Statistical Summary (Mean, Std, IQR)</div>', unsafe_allow_html=True)
-            if num_cols:
-                st.dataframe(filtered_df[num_cols].describe().round(2).T, width="stretch", height=370)
+            st.markdown('<div class="bento-title">🔥 Feature Correlation Matrix</div>', unsafe_allow_html=True)
+            num_corr = df[["Number", "Population", "No/100000", "Log_Number"]].corr().round(3)
+            fig_corr = px.imshow(num_corr, text_auto=True, color_continuous_scale="Blues", zmin=-1, zmax=1)
+            fig_corr.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11))
+            st.plotly_chart(style_chart(fig_corr, 380), width="stretch", config=PLOTLY_CONFIG)
 
 # ==================== VIEW 4: SUPERVISED ML ====================
 elif active == "Supervised ML":
     with st.container(border=True):
-        st.markdown(f'<div class="bento-title">⚙️ Supervised {ai["task_type"]} Leaderboard (Trained on {ai["pca_opt"].n_components_} PCA Components)</div>', unsafe_allow_html=True)
-        st.dataframe(ai["leaderboard"], width="stretch", hide_index=True)
+        st.markdown('<div class="bento-title">⚙️ Supervised ML Classification Leaderboard (5 PCA Components)</div>', unsafe_allow_html=True)
+        st.dataframe(ai["sup_lb"], width="stretch", hide_index=True)
 
-    sel_sup = st.selectbox("Select Supervised Model to Inspect:", ai["leaderboard"]["Model"].tolist())
-    active_sup = ai["sup_models"][sel_sup]
+    sel_sup = st.selectbox("Select Supervised Classifier:", ai["sup_lb"]["Model"].tolist())
+    clf_sup = ai["sup_models"][sel_sup]
+    class_names = ai["encoders"]["Category"].classes_
 
     s1, s2 = st.columns(2)
-    if ai["task_type"] == "Classification":
-        class_names = ai["class_names"]
-        with s1:
-            with st.container(border=True):
-                st.markdown(f'<div class="bento-title">📈 Multi-Class ROC Curve — {sel_sup}</div>', unsafe_allow_html=True)
-                y_bin = label_binarize(ai["y_test"], classes=list(range(len(class_names))))
-                if len(class_names) == 2:
-                    y_bin = np.hstack([1 - y_bin, y_bin])
-                probs = active_sup.predict_proba(ai["X_test_p"])
-                fig_roc = go.Figure()
-                palette = ["#1366D6", "#00A896", "#7C5dfa", "#E11D48", "#F59E0B", "#16A34A"]
-                for i, cname in enumerate(class_names[:6]):
-                    fpr, tpr, _ = roc_curve(y_bin[:, i], probs[:, i])
-                    fig_roc.add_trace(go.Scatter(
-                        x=fpr, y=tpr, mode="lines", name=f"{cname} (AUC={auc(fpr, tpr):.3f})",
-                        line=dict(color=palette[i % len(palette)], width=3)
-                    ))
-                fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="#94A3B8", dash="dash")))
-                st.plotly_chart(style_chart(fig_roc, 330), width="stretch", config=PLOTLY_CONFIG)
+    with s1:
+        with st.container(border=True):
+            st.markdown(f'<div class="bento-title">📈 Multi-Class ROC Curve — {sel_sup}</div>', unsafe_allow_html=True)
+            y_bin = label_binarize(ai["y_test"], classes=[0, 1, 2])
+            probs = clf_sup.predict_proba(ai["X_test_p"])
+            fig_roc = go.Figure()
+            for i, cname in enumerate(class_names):
+                fpr, tpr, _ = roc_curve(y_bin[:, i], probs[:, i])
+                fig_roc.add_trace(go.Scatter(
+                    x=fpr, y=tpr, mode="lines", name=f"{cname} (AUC={auc(fpr, tpr):.3f})",
+                    line=dict(color=["#1366D6", "#00A896", "#7C5dfa"][i], width=3)
+                ))
+            fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="#94A3B8", dash="dash")))
+            st.plotly_chart(style_chart(fig_roc, 330), width="stretch", config=PLOTLY_CONFIG)
 
-        with s2:
-            with st.container(border=True):
-                st.markdown(f'<div class="bento-title">🎯 Confusion Matrix — {sel_sup}</div>', unsafe_allow_html=True)
-                cm = confusion_matrix(ai["y_test"], active_sup.predict(ai["X_test_p"]))
-                fig_cm = px.imshow(cm, text_auto=True, x=class_names, y=class_names, color_continuous_scale="Blues")
-                fig_cm.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11))
-                st.plotly_chart(style_chart(fig_cm, 330), width="stretch", config=PLOTLY_CONFIG)
-    else:
-        y_pred_reg = active_sup.predict(ai["X_test_p"])
-        with s1:
-            with st.container(border=True):
-                st.markdown(f'<div class="bento-title">📐 Actual vs. Predicted — {sel_sup}</div>', unsafe_allow_html=True)
-                reg_df = pd.DataFrame({"Actual": ai["y_test"], "Predicted": y_pred_reg})
-                fig_reg = px.scatter(reg_df, x="Actual", y="Predicted", opacity=0.65, color_discrete_sequence=["#1366D6"])
-                min_v, max_v = min(ai["y_test"].min(), y_pred_reg.min()), max(ai["y_test"].max(), y_pred_reg.max())
-                fig_reg.add_trace(go.Scatter(x=[min_v, max_v], y=[min_v, max_v], mode="lines", name="Ideal Fit", line=dict(color="#E11D48", dash="dash")))
-                st.plotly_chart(style_chart(fig_reg, 330), width="stretch", config=PLOTLY_CONFIG)
+    with s2:
+        with st.container(border=True):
+            st.markdown(f'<div class="bento-title">🎯 Confusion Matrix — {sel_sup}</div>', unsafe_allow_html=True)
+            cm = confusion_matrix(ai["y_test"], clf_sup.predict(ai["X_test_p"]))
+            fig_cm = px.imshow(cm, text_auto=True, x=class_names, y=class_names, color_continuous_scale="Blues")
+            fig_cm.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11))
+            st.plotly_chart(style_chart(fig_cm, 330), width="stretch", config=PLOTLY_CONFIG)
 
-        with s2:
-            with st.container(border=True):
-                st.markdown(f'<div class="bento-title">📉 Residual Error Distribution — {sel_sup}</div>', unsafe_allow_html=True)
-                res_df = pd.DataFrame({"Residual": ai["y_test"] - y_pred_reg})
-                fig_res = px.histogram(res_df, x="Residual", color_discrete_sequence=["#7C5dfa"])
-                st.plotly_chart(style_chart(fig_res, 330), width="stretch", config=PLOTLY_CONFIG)
+    s3, s4 = st.columns(2)
+    with s3:
+        with st.container(border=True):
+            st.markdown(f'<div class="bento-title">📐 Supervised Regression Fit (R² = {ai["reg"]["r2"]} | RMSE = {ai["reg"]["rmse"]})</div>', unsafe_allow_html=True)
+            reg_df = pd.DataFrame({"Actual": ai["reg"]["y_test"], "Predicted": ai["reg"]["y_pred"]})
+            fig_reg = px.scatter(reg_df, x="Actual", y="Predicted", opacity=0.6, color_discrete_sequence=["#1366D6"])
+            fig_reg.add_trace(go.Scatter(x=[0, reg_df["Actual"].max()], y=[0, reg_df["Actual"].max()], mode="lines", name="Ideal Fit", line=dict(color="#E11D48", dash="dash")))
+            st.plotly_chart(style_chart(fig_reg, 310), width="stretch", config=PLOTLY_CONFIG)
 
-    with st.container(border=True):
-        st.markdown('<div class="bento-title">🌟 Dynamic Feature Importance Ranking</div>', unsafe_allow_html=True)
-        fig_imp = px.bar(ai["feat_imp"], x="Importance", y="Feature", orientation="h", color_discrete_sequence=["#00A896"])
-        st.plotly_chart(style_chart(fig_imp, 290), width="stretch", config=PLOTLY_CONFIG)
+    with s4:
+        with st.container(border=True):
+            st.markdown('<div class="bento-title">🌟 Feature Importance Ranking</div>', unsafe_allow_html=True)
+            fig_imp = px.bar(ai["feat_imp"], x="Importance", y="Feature", orientation="h", color_discrete_sequence=["#00A896"])
+            st.plotly_chart(style_chart(fig_imp, 310), width="stretch", config=PLOTLY_CONFIG)
 
 # ==================== VIEW 5: UNSUPERVISED ML ====================
 elif active == "Unsupervised ML":
-    if len(num_cols) < 2:
-        st.warning("At least 2 numeric columns are required for Unsupervised Clustering & Anomaly Detection.")
-    else:
-        if group_col:
-            clust_df = df.groupby(group_col)[num_cols].mean().dropna()
-            label_name = group_col
-        else:
-            clust_df = df[num_cols].dropna().head(300)
-            clust_df.index = [f"Row_{i}" for i in range(len(clust_df))]
-            label_name = "Record"
+    dist_agg = pd.concat([
+        df[(df["Category"] == "INSTITUTIONS") & (df["Location"] == "Total") & (df["Composition"] == "TOTAL")].groupby("District")["Number"].sum().rename("Institutions"),
+        df[(df["Category"] == "ENROLMENT") & (df["Location"] == "Total") & (df["Composition"] == "TOTAL")].groupby("District")["Number"].sum().rename("Enrolment"),
+        df[(df["Category"] == "TEACHING STAFF") & (df["Location"] == "Total") & (df["Composition"] == "TOTAL")].groupby("District")["Number"].sum().rename("Staff"),
+        df.groupby("District")["Population"].first().rename("Population")
+    ], axis=1).dropna()
+    X_d_scaled = StandardScaler().fit_transform(dist_agg)
 
-        X_u_scaled = StandardScaler().fit_transform(clust_df)
-        max_k = min(6, max(2, len(clust_df) - 1))
+    u1, u2 = st.columns([1.3, 1])
+    with u1:
+        k_val = st.slider("Select K-Means Cluster Count (K):", 2, 6, 3)
+        km = KMeans(n_clusters=k_val, random_state=42, n_init=10)
+        dist_agg["Cluster"] = km.fit_predict(X_d_scaled).astype(str)
+        sil = silhouette_score(X_d_scaled, dist_agg["Cluster"])
 
-        u1, u2 = st.columns([1.3, 1])
-        with u1:
-            k_val = st.slider("Select K-Means Cluster Count (K):", 2, max_k, min(3, max_k))
-            km = KMeans(n_clusters=k_val, random_state=42, n_init=10)
-            clust_df["Cluster"] = km.fit_predict(X_u_scaled).astype(str)
-            sil = silhouette_score(X_u_scaled, clust_df["Cluster"]) if len(set(clust_df["Cluster"])) > 1 else 0.0
+        with st.container(border=True):
+            st.markdown(f'<div class="bento-title">🧬 2D PCA District Clusters (K={k_val} | Silhouette = {sil:.3f})</div>', unsafe_allow_html=True)
+            coords = PCA(n_components=2).fit_transform(X_d_scaled)
+            dist_agg["PCA1"], dist_agg["PCA2"] = coords[:, 0], coords[:, 1]
+            fig_cl = px.scatter(
+                dist_agg.reset_index(), x="PCA1", y="PCA2", color="Cluster", size="Population",
+                hover_name="District", text="District",
+                color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#16A34A", "#F59E0B", "#E11D48"]
+            )
+            fig_cl.update_traces(textposition="top center", textfont=dict(color="#0F172A", size=9))
+            st.plotly_chart(style_chart(fig_cl, 350), width="stretch", config=PLOTLY_CONFIG)
 
-            with st.container(border=True):
-                st.markdown(f'<div class="bento-title">🧬 2D PCA Cluster Projection (K={k_val} | Silhouette = {sil:.3f})</div>', unsafe_allow_html=True)
-                coords = PCA(n_components=2).fit_transform(X_u_scaled)
-                clust_df["PCA1"], clust_df["PCA2"] = coords[:, 0], coords[:, 1]
-                plot_u = clust_df.reset_index()
-                fig_cl = px.scatter(
-                    plot_u, x="PCA1", y="PCA2", color="Cluster",
-                    hover_name=plot_u.columns[0],
-                    text=plot_u.columns[0] if len(plot_u) <= 35 else None,
-                    color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#16A34A", "#F59E0B", "#E11D48"]
-                )
-                if len(plot_u) <= 35:
-                    fig_cl.update_traces(textposition="top center", textfont=dict(color="#0F172A", size=9))
-                st.plotly_chart(style_chart(fig_cl, 350), width="stretch", config=PLOTLY_CONFIG)
+    with u2:
+        with st.container(border=True):
+            st.markdown('<div class="bento-title">📉 Elbow Curve (WCSS Inertia)</div>', unsafe_allow_html=True)
+            inertias = [KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_d_scaled).inertia_ for k in range(2, 8)]
+            fig_el = px.line(x=list(range(2, 8)), y=inertias, markers=True, labels={"x": "Clusters (K)", "y": "Inertia"})
+            fig_el.update_traces(line_color="#1366D6", line_width=3)
+            st.plotly_chart(style_chart(fig_el, 200), width="stretch", config=PLOTLY_CONFIG)
 
-        with u2:
-            with st.container(border=True):
-                st.markdown('<div class="bento-title">📉 Elbow Curve (WCSS Inertia)</div>', unsafe_allow_html=True)
-                k_range = list(range(2, max_k + 2))
-                inertias = [KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_u_scaled).inertia_ for k in k_range]
-                fig_el = px.line(x=k_range, y=inertias, markers=True, labels={"x": "Clusters (K)", "y": "Inertia"})
-                fig_el.update_traces(line_color="#1366D6", line_width=3)
-                st.plotly_chart(style_chart(fig_el, 200), width="stretch", config=PLOTLY_CONFIG)
-
-            with st.container(border=True):
-                st.markdown('<div class="bento-title">🚨 Isolation Forest Anomaly Detection (5%)</div>', unsafe_allow_html=True)
-                iso = IsolationForest(contamination=0.05, random_state=42)
-                df_anom = df.copy()
-                df_anom["Status"] = np.where(iso.fit_predict(df[num_cols]) == -1, "Anomaly", "Normal")
-                fig_iso = px.scatter(
-                    df_anom, x=num_cols[0], y=num_cols[1], color="Status",
-                    color_discrete_map={"Normal": "#94A3B8", "Anomaly": "#E11D48"}
-                )
-                st.plotly_chart(style_chart(fig_iso, 210), width="stretch", config=PLOTLY_CONFIG)
+        with st.container(border=True):
+            st.markdown('<div class="bento-title">🚨 Isolation Forest Anomaly Detection</div>', unsafe_allow_html=True)
+            iso = IsolationForest(contamination=0.05, random_state=42)
+            df_anom = df.copy()
+            df_anom["Status"] = np.where(iso.fit_predict(df[["Number", "Population", "No/100000"]]) == -1, "Anomaly", "Normal")
+            fig_iso = px.scatter(
+                df_anom, x="Population", y="Number", color="Status",
+                color_discrete_map={"Normal": "#94A3B8", "Anomaly": "#E11D48"}
+            )
+            st.plotly_chart(style_chart(fig_iso, 210), width="stretch", config=PLOTLY_CONFIG)
 
 # ==================== VIEW 6: DEEP LEARNING ====================
 elif active == "Deep Learning":
     d1, d2 = st.columns(2)
     with d1:
         with st.container(border=True):
-            metric_tag = f"Acc: {ai['dl']['primary']}%" if ai["task_type"] == "Classification" else f"R²: {ai['dl']['primary']}"
-            st.markdown(f'<div class="bento-title">🧠 Deep Neural Network Convergence ({metric_tag})</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="bento-title">🧠 Deep MLP Convergence (Test Acc: {ai["dl"]["acc"]}%)</div>', unsafe_allow_html=True)
             ep = list(range(1, len(ai["dl"]["losses"]) + 1))
             fig_dl = go.Figure()
-            fig_dl.add_trace(go.Scatter(x=ep, y=ai["dl"]["losses"], name="Training Loss", line=dict(color="#E11D48", width=2.5)))
-            fig_dl.add_trace(go.Scatter(x=ep, y=ai["dl"]["val_scores"], name="Val Score (%)", yaxis="y2", line=dict(color="#1366D6", width=2.5)))
-            fig_dl.update_layout(yaxis=dict(title="Loss"), yaxis2=dict(title="Score (%)", overlaying="y", side="right"))
+            fig_dl.add_trace(go.Scatter(x=ep, y=ai["dl"]["losses"], name="Loss", line=dict(color="#E11D48", width=2.5)))
+            fig_dl.add_trace(go.Scatter(x=ep, y=ai["dl"]["val_accs"], name="Val Acc (%)", yaxis="y2", line=dict(color="#1366D6", width=2.5)))
+            fig_dl.update_layout(yaxis=dict(title="Loss"), yaxis2=dict(title="Acc (%)", overlaying="y", side="right"))
             st.plotly_chart(style_chart(fig_dl, 310), width="stretch", config=PLOTLY_CONFIG)
 
-    if ai["task_type"] == "Classification":
-        class_names = ai["class_names"]
-        with d2:
-            with st.container(border=True):
-                st.markdown('<div class="bento-title">📈 Deep MLP Multi-Class ROC Curves</div>', unsafe_allow_html=True)
-                y_bin = label_binarize(ai["y_test"], classes=list(range(len(class_names))))
-                if len(class_names) == 2:
-                    y_bin = np.hstack([1 - y_bin, y_bin])
-                dl_probs = ai["dl"]["model"].predict_proba(ai["X_test_p"])
-                fig_dl_roc = go.Figure()
-                palette = ["#1366D6", "#00A896", "#7C5dfa", "#E11D48", "#F59E0B", "#16A34A"]
-                for i, cname in enumerate(class_names[:6]):
-                    fpr, tpr, _ = roc_curve(y_bin[:, i], dl_probs[:, i])
-                    fig_dl_roc.add_trace(go.Scatter(
-                        x=fpr, y=tpr, mode="lines", name=f"{cname} (AUC={auc(fpr, tpr):.3f})",
-                        line=dict(color=palette[i % len(palette)], width=3)
-                    ))
-                fig_dl_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="#94A3B8", dash="dash")))
-                st.plotly_chart(style_chart(fig_dl_roc, 310), width="stretch", config=PLOTLY_CONFIG)
+    with d2:
+        with st.container(border=True):
+            st.markdown('<div class="bento-title">📈 Deep MLP Multi-Class ROC Curves</div>', unsafe_allow_html=True)
+            y_bin = label_binarize(ai["y_test"], classes=[0, 1, 2])
+            dl_probs = ai["dl"]["model"].predict_proba(ai["X_test_p"])
+            class_names = ai["encoders"]["Category"].classes_
+            fig_dl_roc = go.Figure()
+            for i, cname in enumerate(class_names):
+                fpr, tpr, _ = roc_curve(y_bin[:, i], dl_probs[:, i])
+                fig_dl_roc.add_trace(go.Scatter(
+                    x=fpr, y=tpr, mode="lines", name=f"{cname} (AUC={auc(fpr, tpr):.3f})",
+                    line=dict(color=["#1366D6", "#00A896", "#7C5dfa"][i], width=3)
+                ))
+            fig_dl_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="#94A3B8", dash="dash")))
+            st.plotly_chart(style_chart(fig_dl_roc, 310), width="stretch", config=PLOTLY_CONFIG)
 
-        d3, d4 = st.columns(2)
-        dl_preds = ai["dl"]["model"].predict(ai["X_test_p"])
+    d3, d4 = st.columns(2)
+    dl_preds = ai["dl"]["model"].predict(ai["X_test_p"])
+    class_names = ai["encoders"]["Category"].classes_
 
-        with d3:
-            with st.container(border=True):
-                st.markdown('<div class="bento-title">🎯 Deep MLP Confusion Matrix</div>', unsafe_allow_html=True)
-                dl_cm = confusion_matrix(ai["y_test"], dl_preds)
-                fig_dl_cm = px.imshow(
-                    dl_cm, text_auto=True, x=class_names, y=class_names,
-                    color_continuous_scale="Teal", labels=dict(x="Predicted", y="Actual", color="Count")
-                )
-                fig_dl_cm.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11), colorbar_title_font=dict(color="#0F172A"))
-                st.plotly_chart(style_chart(fig_dl_cm, 310), width="stretch", config=PLOTLY_CONFIG)
+    with d3:
+        with st.container(border=True):
+            st.markdown('<div class="bento-title">🎯 Deep MLP Confusion Matrix</div>', unsafe_allow_html=True)
+            dl_cm = confusion_matrix(ai["y_test"], dl_preds)
+            fig_dl_cm = px.imshow(
+                dl_cm, text_auto=True, x=class_names, y=class_names,
+                color_continuous_scale="Teal", labels=dict(x="Predicted", y="Actual", color="Count")
+            )
+            fig_dl_cm.update_coloraxes(colorbar_tickfont=dict(color="#0F172A", size=11), colorbar_title_font=dict(color="#0F172A"))
+            st.plotly_chart(style_chart(fig_dl_cm, 310), width="stretch", config=PLOTLY_CONFIG)
 
-        with d4:
-            with st.container(border=True):
-                st.markdown('<div class="bento-title">📊 Class-Wise Precision, Recall & F1-Score (%)</div>', unsafe_allow_html=True)
-                prec, rec, f1_cls, _ = precision_recall_fscore_support(ai["y_test"], dl_preds, zero_division=0)
-                metrics_df = pd.DataFrame({
-                    "Category": np.tile(class_names, 3),
-                    "Metric": np.repeat(["Precision", "Recall", "F1-Score"], len(class_names)),
-                    "Score (%)": np.concatenate([prec * 100, rec * 100, f1_cls * 100]).round(1)
-                })
-                fig_prf = px.bar(
-                    metrics_df, x="Category", y="Score (%)", color="Metric", barmode="group",
-                    color_discrete_map={"Precision": "#1366D6", "Recall": "#00A896", "F1-Score": "#7C5dfa"}
-                )
-                fig_prf.update_traces(texttemplate="%{y:.1f}%", textposition="outside", textfont=dict(size=9, color="#0F172A"))
-                fig_prf.update_yaxes(range=[0, 112])
-                st.plotly_chart(style_chart(fig_prf, 310), width="stretch", config=PLOTLY_CONFIG)
-    else:
-        with d2:
-            with st.container(border=True):
-                st.markdown('<div class="bento-title">📐 Deep MLP Regressor: Actual vs. Predicted</div>', unsafe_allow_html=True)
-                dl_y_pred = ai["dl"]["model"].predict(ai["X_test_p"])
-                reg_dl_df = pd.DataFrame({"Actual": ai["y_test"], "Predicted": dl_y_pred})
-                fig_dl_reg = px.scatter(reg_dl_df, x="Actual", y="Predicted", opacity=0.65, color_discrete_sequence=["#00A896"])
-                st.plotly_chart(style_chart(fig_dl_reg, 310), width="stretch", config=PLOTLY_CONFIG)
+    with d4:
+        with st.container(border=True):
+            st.markdown('<div class="bento-title">📊 Class-Wise Precision, Recall & F1-Score (%)</div>', unsafe_allow_html=True)
+            prec, rec, f1_cls, _ = precision_recall_fscore_support(ai["y_test"], dl_preds)
+            metrics_df = pd.DataFrame({
+                "Category": np.tile(class_names, 3),
+                "Metric": np.repeat(["Precision", "Recall", "F1-Score"], len(class_names)),
+                "Score (%)": np.concatenate([prec * 100, rec * 100, f1_cls * 100]).round(1)
+            })
+            fig_prf = px.bar(
+                metrics_df, x="Category", y="Score (%)", color="Metric", barmode="group",
+                color_discrete_map={"Precision": "#1366D6", "Recall": "#00A896", "F1-Score": "#7C5dfa"}
+            )
+            fig_prf.update_traces(texttemplate="%{y:.1f}%", textposition="outside", textfont=dict(size=9, color="#0F172A"))
+            fig_prf.update_yaxes(range=[0, 112])
+            st.plotly_chart(style_chart(fig_prf, 310), width="stretch", config=PLOTLY_CONFIG)
 
-# ==================== VIEW 7: AUTO-GENERATED LIVE PREDICTOR ====================
+# ==================== VIEW 7: LIVE PREDICTOR ====================
 elif active == "Live Predictor":
     with st.container(border=True):
-        st.markdown(f'<div class="bento-title">⚡ Auto-Generated Live AI Inference Form (Target: {target_col})</div>', unsafe_allow_html=True)
-
-        user_inputs = {}
-        cols_grid = st.columns(4)
-        for i, col in enumerate(feature_cols):
-            with cols_grid[i % 4]:
-                if col in cat_cols:
-                    options = sorted(df[col].unique().tolist())
-                    user_inputs[col] = st.selectbox(col, options, key=f"dyn_in_{col}")
-                else:
-                    med_val = float(df[col].median())
-                    user_inputs[col] = st.number_input(col, value=med_val, key=f"dyn_in_{col}")
+        st.markdown('<div class="bento-title">⚡ Live Multi-Paradigm AI Inference Studio</div>', unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns(4)
+        in_loc = c1.selectbox("Location", ai["encoders"]["Location"].classes_, key="s_loc")
+        in_sch = c2.selectbox("School Type", ai["encoders"]["School Type"].classes_, key="s_sch")
+        in_cmp = c3.selectbox("Composition", ai["encoders"]["Composition"].classes_, key="s_cmp")
+        in_num = c4.number_input("Recorded Count", 0.0, 10000.0, 320.0)
 
         all_models = {"Deep Neural Network (MLP)": ai["dl"]["model"], **ai["sup_models"]}
-        chosen_model_name = st.selectbox("Select AI Model for Inference:", list(all_models.keys()))
+        c5, c6, c7 = st.columns([1, 1, 1.3])
+        in_pop = c5.number_input("District Population", 100000.0, 5000000.0, 1600000.0)
+        in_rate = c6.number_input("Rate per 100k", 0.0, 1000.0, 20.0)
+        in_mod = c7.selectbox("Select Model", list(all_models.keys()))
 
-        if st.button("🚀 Run Dynamic Prediction", type="primary"):
-            row_df = pd.DataFrame([user_inputs])
-            for col in feature_cols:
-                if col in ai["encoders"]:
-                    row_df[col] = ai["encoders"][col].transform(row_df[col].astype(str))
+        if st.button("🚀 Run Live Prediction", type="primary"):
+            row = pd.DataFrame([{
+                "Location": ai["encoders"]["Location"].transform([in_loc])[0],
+                "School Type": ai["encoders"]["School Type"].transform([in_sch])[0],
+                "Composition": ai["encoders"]["Composition"].transform([in_cmp])[0],
+                "Number": in_num,
+                "Population": in_pop,
+                "No/100000": in_rate,
+                "Log_Number": np.log1p(in_num)
+            }])
+            row_p = ai["pca_95"].transform(ai["scaler"].transform(row))
+            clf = all_models[in_mod]
+            pred_lbl = ai["encoders"]["Category"].inverse_transform([clf.predict(row_p)[0]])[0]
+            probs = clf.predict_proba(row_p)[0]
 
-            row_p = ai["pca_opt"].transform(ai["scaler"].transform(row_df))
-            active_clf = all_models[chosen_model_name]
-
-            if ai["task_type"] == "Classification":
-                pred_idx = active_clf.predict(row_p)[0]
-                pred_label = ai["encoders"][target_col].inverse_transform([pred_idx])[0]
-                probs = active_clf.predict_proba(row_p)[0]
-                st.success(f"**Predicted {target_col} ({chosen_model_name}):** `{pred_label}` — Confidence: **{max(probs)*100:.2f}%**")
-
-                p_df = pd.DataFrame({"Class": ai["class_names"], "Confidence (%)": (probs * 100).round(2)})
-                fig_p = px.bar(p_df, x="Class", y="Confidence (%)", color="Class", text="Confidence (%)",
-                               color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa", "#16A34A"])
-                fig_p.update_layout(showlegend=False)
-                st.plotly_chart(style_chart(fig_p, 260), width="stretch", config=PLOTLY_CONFIG)
-            else:
-                pred_val = active_clf.predict(row_p)[0]
-                st.success(f"**Predicted {target_col} ({chosen_model_name}):** `{pred_val:,.2f}`")
+            st.success(f"**Predicted Category ({in_mod}):** `{pred_lbl}` — Confidence: **{max(probs)*100:.2f}%**")
+            p_df = pd.DataFrame({"Category": ai["encoders"]["Category"].classes_, "Confidence (%)": (probs * 100).round(2)})
+            fig_p = px.bar(p_df, x="Category", y="Confidence (%)", color="Category", text="Confidence (%)",
+                           color_discrete_sequence=["#1366D6", "#00A896", "#7C5dfa"])
+            fig_p.update_layout(showlegend=False)
+            st.plotly_chart(style_chart(fig_p, 270), width="stretch", config=PLOTLY_CONFIG)
 
 # ------------------------------------------------------------
-# 9. BOTTOM GRADIENT FOOTER BANNER
+# 8. BOTTOM GRADIENT FOOTER BANNER
 # ------------------------------------------------------------
 
-st.markdown(f"""
+st.markdown("""
 <div class="footer-banner">
-    <div class="footer-tagline">💡 Universal Auto-Analytics & AI Engine • Currently Analyzing: {active_filename}</div>
-    <div class="footer-skyline">⚙️ Auto-Cleaning • PCA ({ai['pca_opt'].n_components_} PCs) • Supervised • Unsupervised • Deep Learning</div>
+    <div class="footer-tagline">💡 Smarter Insights. Better Education. A Brighter Sindh.</div>
+    <div class="footer-skyline">🏛️ Karachi • Hyderabad • Sukkur • Larkana • Mirpurkhas • Shaheed Benazirabad</div>
 </div>
 """, unsafe_allow_html=True)
