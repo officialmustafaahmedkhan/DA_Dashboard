@@ -34,7 +34,7 @@ from sklearn.metrics import (
 )
 
 # ------------------------------------------------------------
-# 1. PAGE CONFIG & EXECUTIVE SAAS UI STYLING
+# 1. PAGE CONFIG & EXECUTIVE SAAS UI STYLING (WITH ANIMATIONS)
 # ------------------------------------------------------------
 
 st.set_page_config(
@@ -59,6 +59,33 @@ SECTIONS = [
 
 st.markdown("""
 <style>
+    /* KEYFRAME ANIMATIONS */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulseGlow {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+        }
+        50% {
+            box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
+        }
+    }
+
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
     .stApp {
         background-color: #EEF3FA !important;
         color: #0F172A !important;
@@ -97,9 +124,11 @@ st.markdown("""
         border-radius: 10px !important;
         margin: 0 !important;
         border: 1px solid transparent !important;
+        transition: all 0.22s ease !important;
     }
     section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
         background-color: rgba(255, 255, 255, 0.08) !important;
+        transform: translateX(3px);
     }
     section[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"],
     section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
@@ -153,6 +182,7 @@ st.markdown("""
         border: 1px solid #CBD5E1 !important;
         border-radius: 8px !important;
         padding: 4px 10px !important;
+        transition: all 0.2s ease !important;
     }
     div[data-testid="stAppViewContainer"] div[role="radiogroup"] label:has(input:checked) {
         background-color: #DBEAFE !important;
@@ -173,6 +203,7 @@ st.markdown("""
         background-color: #10B981; color: #FFFFFF;
         display: flex; align-items: center; justify-content: center;
         font-weight: 900; font-size: 1.05rem; flex-shrink: 0;
+        animation: pulseGlow 2.4s infinite;
     }
     .health-sub { color: #6EE7B7 !important; font-size: 0.74rem; font-weight: 700; }
     .health-main { color: #FFFFFF !important; font-size: 1.05rem; font-weight: 800; }
@@ -183,7 +214,11 @@ st.markdown("""
     }
 
     /* TOP HEADER BAR */
-    .title-block { border-left: 5px solid #14B8A6; padding-left: 12px; }
+    .title-block {
+        border-left: 5px solid #14B8A6;
+        padding-left: 12px;
+        animation: fadeInUp 0.45s ease-out forwards;
+    }
     .main-hub-title { font-size: 1.75rem; font-weight: 800; color: #0B2259; line-height: 1.15; margin: 0; }
     .main-hub-sub { font-size: 0.88rem; color: #475569; margin-top: 2px; }
     .updated-pill {
@@ -195,14 +230,22 @@ st.markdown("""
         background-color: #0B2259; color: #FFFFFF; font-weight: 800; font-size: 0.80rem;
         width: 36px; height: 36px; border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
+        transition: transform 0.25s ease;
     }
+    .avatar-pill:hover { transform: scale(1.1); }
 
-    /* 4 GRADIENT KPI CARDS */
+    /* 4 GRADIENT KPI CARDS WITH ENTRANCE & HOVER ANIMATION */
     .grad-kpi {
         border-radius: 14px; padding: 16px 18px; color: #FFFFFF !important;
         position: relative; overflow: hidden;
         box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10);
         min-height: 118px; display: flex; align-items: center; gap: 14px;
+        animation: fadeInUp 0.55s ease-out forwards;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .grad-kpi:hover {
+        transform: translateY(-5px) scale(1.015);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
     }
     .kpi-blue { background: linear-gradient(135deg, #1366D6 0%, #0C4A9E 100%); }
     .kpi-teal { background: linear-gradient(135deg, #00A896 0%, #028090 100%); }
@@ -214,6 +257,10 @@ st.markdown("""
         background: rgba(255, 255, 255, 0.18);
         display: flex; align-items: center; justify-content: center;
         font-size: 1.55rem; flex-shrink: 0;
+        transition: transform 0.3s ease;
+    }
+    .grad-kpi:hover .kpi-icon-box {
+        transform: rotate(-6deg) scale(1.1);
     }
     .kpi-content { z-index: 2; }
     .kpi-lbl { font-size: 0.86rem; font-weight: 600; color: rgba(255, 255, 255, 0.92) !important; }
@@ -222,13 +269,23 @@ st.markdown("""
         color: #FFFFFF !important; line-height: 1.15; margin: 3px 0; white-space: nowrap;
     }
     .kpi-trend { font-size: 0.76rem; font-weight: 600; color: #D1FAE5 !important; }
-    .kpi-watermark { position: absolute; right: 12px; bottom: -6px; font-size: 3.4rem; opacity: 0.14; pointer-events: none; }
+    .kpi-watermark {
+        position: absolute; right: 12px; bottom: -6px; font-size: 3.4rem;
+        opacity: 0.14; pointer-events: none; transition: transform 0.3s ease;
+    }
+    .grad-kpi:hover .kpi-watermark { transform: scale(1.15) translate(-4px, -4px); }
 
-    /* WHITE BENTO CHART CONTAINERS */
+    /* WHITE BENTO CHART CONTAINERS WITH ANIMATION */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #FFFFFF !important; border: 1px solid #E2E8F0 !important;
         border-radius: 14px !important; padding: 14px 16px !important;
         box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04) !important;
+        animation: fadeInUp 0.65s ease-out forwards;
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
     }
     .bento-title {
         font-size: 1.02rem; font-weight: 800; color: #0B2259 !important;
@@ -245,17 +302,26 @@ st.markdown("""
         border: 1px solid #CBD5E1 !important; border-radius: 10px !important;
         font-weight: 700 !important; font-size: 0.83rem !important;
         padding: 0.42rem 0.6rem !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {
+        border-color: #1677FF !important;
+        color: #1677FF !important;
+        transform: translateY(-2px);
     }
     div[data-testid="stHorizontalBlock"] button[kind="primary"] {
         background: linear-gradient(90deg, #1677FF 0%, #0E5FD8 100%) !important;
         color: #FFFFFF !important; border: none !important; border-radius: 10px !important;
         font-weight: 700 !important; font-size: 0.83rem !important;
         padding: 0.42rem 0.6rem !important;
+        transition: all 0.2s ease !important;
     }
 
     /* BOTTOM FOOTER BANNER */
     .footer-banner {
-        background: linear-gradient(90deg, #071A4B 0%, #0E3A8A 65%, #0D9488 100%);
+        background: linear-gradient(90deg, #071A4B, #0E3A8A, #0D9488, #071A4B);
+        background-size: 200% 200%;
+        animation: gradientShift 10s ease infinite;
         border-radius: 14px; padding: 14px 22px; margin-top: 14px;
         display: flex; align-items: center; justify-content: space-between;
         color: #FFFFFF !important; box-shadow: 0 4px 14px rgba(7, 26, 75, 0.18);
@@ -282,7 +348,8 @@ def style_chart(fig, height=290):
             xanchor="center"
         ),
         margin=dict(t=24, l=8, r=8, b=8),
-        height=height
+        height=height,
+        transition=dict(duration=550, easing="cubic-in-out")
     )
     fig.update_xaxes(showgrid=False, zeroline=False, tickfont=dict(color="#0F172A", size=11), title_font=dict(color="#0F172A", size=11))
     fig.update_yaxes(showgrid=True, gridcolor="#E2E8F0", zeroline=False, tickfont=dict(color="#0F172A", size=11), title_font=dict(color="#0F172A", size=11))
@@ -764,6 +831,45 @@ if active == "Executive Overview":
             )
             fig_dist.update_xaxes(type="category", tickangle=-40, tickfont=dict(size=9))
             st.plotly_chart(style_chart(fig_dist, 245), use_container_width=True, config=PLOTLY_CONFIG)
+
+    # Interactive Animated Provincial Comparison Bar (Play / Pause across Categories)
+    with st.container(border=True):
+        st.markdown('<div class="bento-title">🎬 Animated District Comparison (Click ▶ Play to Animate Across Categories)</div>', unsafe_allow_html=True)
+        anim_df = (
+            df[(df["Location"] == "Total") & (df["Composition"] == "TOTAL")]
+            .groupby(["Category", "District"])["Number"].sum()
+            .reset_index()
+        )
+        max_y = anim_df["Number"].max() * 1.15
+        fig_anim = px.bar(
+            anim_df,
+            x="District",
+            y="Number",
+            color="Category",
+            animation_frame="Category",
+            range_y=[0, max_y],
+            color_discrete_map={
+                "INSTITUTIONS": "#1366D6",
+                "ENROLMENT": "#4ADE80",
+                "TEACHING STAFF": "#7C5dfa"
+            }
+        )
+        fig_anim.update_traces(texttemplate="%{y:,.0f}", textposition="outside", textfont=dict(size=8, color="#0F172A"))
+        fig_anim.update_xaxes(type="category", tickangle=-35, tickfont=dict(size=9))
+        fig_anim.update_layout(
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#FFFFFF",
+            font=dict(color="#0F172A", size=11),
+            showlegend=False,
+            yaxis_title="Count (Numeric)",
+            xaxis_title="District (Categorical)",
+            margin=dict(t=15, l=10, r=10, b=10),
+            height=300
+        )
+        if fig_anim.layout.updatemenus:
+            fig_anim.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 1400
+            fig_anim.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 600
+        st.plotly_chart(fig_anim, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ==================== VIEW 2: DISTRICT & GENDER ====================
 elif active == "District & Gender":
